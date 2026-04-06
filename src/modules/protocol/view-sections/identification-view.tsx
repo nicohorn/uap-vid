@@ -26,7 +26,7 @@ const TeamTable = ({
 }) => {
   return (
     <>
-      <DescriptionTerm>Integrantes del Equipo de Investigación</DescriptionTerm>
+      <DescriptionTerm>Equipo de investigación</DescriptionTerm>
       <DescriptionDetails>
         <div className="space-y-2">
           {/* Table Header */}
@@ -87,7 +87,7 @@ export default async function IdentificationView({
 
   const shortData = [
     {
-      title: 'Título',
+      title: 'Título descriptivo del proyecto',
       value: data.title,
     },
     {
@@ -99,7 +99,7 @@ export default async function IdentificationView({
       value: course?.name,
     },
     {
-      title: 'Ente/s Patrocinante',
+      title: 'Fuente de financiamiento',
       value: academicUnits.filter(Boolean).join(' - '),
     },
   ]

@@ -24,6 +24,7 @@ export const BibliographySchema = z.object({
           .max(new Date().getFullYear(), {
             message: 'No puede ser mayor al año actual',
           }),
+        url: z.string().nullable().optional().default(''),
       })
     )
     .array(),
@@ -48,6 +49,8 @@ export const DescriptionSchema = z.object({
   objective: z.string().min(1, { message: 'El campo no puede estar vacío' }),
   type: z.string().min(1, { message: 'El campo no puede estar vacío' }),
   words: z.string().min(1, { message: 'El campo no puede estar vacío' }),
+  methodologicalApproach: z.string().min(1, { message: 'El campo no puede estar vacío' }).nullable().default(''),
+  methodologicalDesign: z.string().min(1, { message: 'El campo no puede estar vacío' }).nullable().default(''),
 })
 
 /////////////////////////////////////////
@@ -234,8 +237,9 @@ export const MethodologySchema = z.object({
 /////////////////////////////////////////
 
 export const PublicationSchema = z.object({
-  title: z.string().min(1, { message: 'El campo no puede estar vacío' }),
+  title: z.string().nullable().optional().default(''),
   result: z.string().min(1, { message: 'El campo no puede estar vacío' }),
+  technologicalResult: z.string().nullable().optional().default(''),
 })
 
 /////////////////////////////////////////

@@ -17,8 +17,12 @@ const BibliographyView = ({ data }: BibliographyViewProps) => {
           down: item.author,
         },
         {
-          up: 'Año',
+          up: 'Año de publicación',
           down: item.year,
+        },
+        {
+          up: 'URL',
+          down: (item as any).url ?? '',
         },
       ])
       return newVal

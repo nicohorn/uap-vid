@@ -56,6 +56,8 @@ export const initialSectionValues: z.infer<typeof SectionsSchema> = {
     objective: '',
     type: '',
     words: '',
+    methodologicalApproach: '',
+    methodologicalDesign: '',
   },
   introduction: {
     justification: '',
@@ -78,6 +80,7 @@ export const initialSectionValues: z.infer<typeof SectionsSchema> = {
   publication: {
     title: '',
     result: '',
+    technologicalResult: '',
   },
   bibliography: {
     chart: [],

@@ -50,3 +50,5 @@ next-env.d.ts
 
 sensitive.json
 nul
+
+.claude

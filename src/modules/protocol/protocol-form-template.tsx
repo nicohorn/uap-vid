@@ -10,7 +10,6 @@ import {
   DurationForm,
   IdentificationForm,
   IntroductionForm,
-  MethodologyForm,
   PublicationForm,
 } from '@protocol/form-sections'
 import { ProtocolSchema } from '@utils/zod'
@@ -41,9 +40,8 @@ const sectionMapper: { [key: number]: JSX.Element } = {
   2: <BudgetForm />,
   3: <DescriptionForm />,
   4: <IntroductionForm />,
-  5: <MethodologyForm />,
-  6: <PublicationForm />,
-  7: <BibliographyForm />,
+  5: <PublicationForm />,
+  6: <BibliographyForm />,
 }
 
 // Helper functions
@@ -91,6 +89,7 @@ const getDefaultSections = () => ({
   publication: {
     title: '',
     result: '',
+    technologicalResult: '',
   },
   bibliography: {
     chart: [],
@@ -197,7 +196,7 @@ export default function ProtocolForm({
     // Validate if not existing path goes to section 0
     if (
       pathname &&
-      !['0', '1', '2', '3', '4', '5', '6', '7'].includes(
+      !['0', '1', '2', '3', '4', '5', '6'].includes(
         pathname?.split('/')[3]
       )
     )
@@ -381,7 +380,7 @@ export default function ProtocolForm({
           />
           <SectionButton
             path={'sections.duration'}
-            label={'Duración'}
+            label={'Tipo y duración'}
             value={'1'}
           />
           <SectionButton
@@ -399,22 +398,17 @@ export default function ProtocolForm({
             label={'Introducción'}
             value={'4'}
           />
-          <SectionButton
-            path={'sections.methodology'}
-            label={'Metodología'}
-            value={'5'}
-          />
 
           <SectionButton
             path={'sections.publication'}
-            label={'Publicación'}
-            value={'6'}
+            label={'Producción'}
+            value={'5'}
           />
 
           <SectionButton
             path={'sections.bibliography'}
             label={'Bibliografía'}
-            value={'7'}
+            value={'6'}
           />
         </motion.div>
 
@@ -437,7 +431,7 @@ export default function ProtocolForm({
           <Button
             type="button"
             plain
-            disabled={section === '7'}
+            disabled={section === '6'}
             onClick={() => setSection((p) => (Number(p) + 1).toString())}
           >
             Sección siguiente
