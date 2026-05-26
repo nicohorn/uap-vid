@@ -6,8 +6,11 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.yaml* ./
+# Install dependencies based on the preferred package manager.
+# pnpm-workspace.yaml carries onlyBuiltDependencies (pnpm v11 ignores the
+# legacy `pnpm` field in package.json) — it must be present at install time
+# so install scripts for prisma / esbuild / sharp / unrs-resolver actually run.
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
 RUN \
     if [ -f pnpm-lock.yaml ]; then \
     corepack enable pnpm && \
