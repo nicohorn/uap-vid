@@ -332,7 +332,8 @@ type ProtocolSections {
 }
 
 type ProtocolSectionsBibliography {
-  chart ProtocolSectionsBibliographyChart[]
+  chart   ProtocolSectionsBibliographyChart[]
+  content String                              @default("")
 }
 
 type ProtocolSectionsBibliographyChart {

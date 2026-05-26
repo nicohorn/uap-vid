@@ -84,5 +84,6 @@ export const initialSectionValues: z.infer<typeof SectionsSchema> = {
   },
   bibliography: {
     chart: [],
+    content: '',
   },
 }

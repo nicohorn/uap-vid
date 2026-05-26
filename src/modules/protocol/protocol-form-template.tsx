@@ -33,6 +33,7 @@ import { Button } from '@components/button'
 import type { z } from 'zod'
 import { createProtocol, updateProtocolById } from '@repositories/protocol'
 import { ClearLocalStorageButton } from 'modules/clear-local-storage-button'
+import { chartToBibliographyHtml } from '@utils/bibliography'
 
 const sectionMapper: { [key: number]: JSX.Element } = {
   0: <IdentificationForm />,
@@ -64,6 +65,21 @@ const clearInvalidLocalStorage = () => {
         )
         if (hasInvalidHours) {
           localStorage.removeItem('temp-protocol')
+          return
+        }
+
+        // Migrate old bibliography format (chart-only) to new format (content).
+        // Old drafts only have `chart`; the new form binds to `content`.
+        const bibliography = parsed?.sections?.bibliography
+        const hasLegacyBibliography =
+          bibliography &&
+          bibliography.chart.length > 0
+        if (hasLegacyBibliography) {
+          parsed.sections.bibliography = {
+            chart: [],
+            content: chartToBibliographyHtml(bibliography.chart),
+          }
+          localStorage.setItem('temp-protocol', JSON.stringify(parsed))
         }
       }
     } catch (error) {
@@ -93,6 +109,7 @@ const getDefaultSections = () => ({
   },
   bibliography: {
     chart: [],
+    content: '',
   },
   identification: {
     courseId: null,
@@ -119,16 +136,16 @@ const sanitizeTeamMember = (member: any) => ({
   ...member,
   hours:
     typeof member.hours === 'string' ? parseInt(member.hours) || null
-    : member.hours === 0 ? null
-    : member.hours,
+      : member.hours === 0 ? null
+        : member.hours,
   teamMemberId: sanitizeObjectId(member.teamMemberId),
   categoryToBeConfirmed: sanitizeObjectId(member.categoryToBeConfirmed),
   assignments: (member.assignments || []).map((assignment: any) => ({
     ...assignment,
     hours:
       typeof assignment.hours === 'string' ? parseInt(assignment.hours) || 1
-      : assignment.hours === 0 ? 1
-      : assignment.hours,
+        : assignment.hours === 0 ? 1
+          : assignment.hours,
   })),
 })
 
@@ -158,7 +175,18 @@ const sanitizeProtocolData = (protocol: any) => {
       },
       methodology: protocol.sections.methodology || defaults.methodology,
       publication: protocol.sections.publication || defaults.publication,
-      bibliography: protocol.sections.bibliography || defaults.bibliography,
+      bibliography: (() => {
+        const incoming = protocol.sections.bibliography
+        if (!incoming) return defaults.bibliography
+        const hasContent =
+          typeof incoming.content === 'string' &&
+          incoming.content.trim().length > 0
+        return {
+          chart: incoming.chart ?? [],
+          content:
+            hasContent ? incoming.content : chartToBibliographyHtml(incoming.chart),
+        }
+      })(),
     },
   }
 }
@@ -187,7 +215,7 @@ export default function ProtocolForm({
         localStorage.getItem('temp-protocol')
       ) ?
         JSON.parse(localStorage.getItem('temp-protocol')!)
-      : protocol,
+        : protocol,
     validate: zodResolver(ProtocolSchema),
     validateInputOnBlur: true,
   })
@@ -295,8 +323,8 @@ export default function ProtocolForm({
         {!form.isValid(path) ?
           form.isDirty(path) ?
             <AlertCircle className="size-4 stroke-yellow-500" />
-          : <CircleDashed className="size-3.5 stroke-gray-500" />
-        : <CircleCheck className="size-4 stroke-teal-500" />}
+            : <CircleDashed className="size-3.5 stroke-gray-500" />
+          : <CircleCheck className="size-4 stroke-teal-500" />}
       </BadgeButton>
     ),
     [form, section]
@@ -308,7 +336,7 @@ export default function ProtocolForm({
         onBlur={() => {
           pathname?.split('/')[2] === 'new' && typeof window !== 'undefined' ?
             localStorage.setItem('temp-protocol', JSON.stringify(form.values))
-          : null
+            : null
         }}
         onSubmit={(e) => {
           e.preventDefault()

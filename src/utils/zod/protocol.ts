@@ -12,22 +12,24 @@ import { ProtocolStateSchema } from './enums'
 /////////////////////////////////////////
 
 export const BibliographySchema = z.object({
+  content: z
+    .string()
+    .min(1, { message: 'La bibliografía no puede estar vacía' })
+    .refine((html) => html.replace(/<[^>]*>/g, '').trim().length > 0, {
+      message: 'La bibliografía no puede estar vacía',
+    }),
   chart: z
     .lazy(() =>
       z.object({
-        author: z.string().min(1, { message: 'El campo no puede estar vació' }),
-        title: z.string().min(1, { message: 'El campo no puede estar vació' }),
-        year: z.coerce
-          .number({
-            invalid_type_error: 'Este campo debe ser numérico',
-          })
-          .max(new Date().getFullYear(), {
-            message: 'No puede ser mayor al año actual',
-          }),
+        author: z.string().optional().default(''),
+        title: z.string().optional().default(''),
+        year: z.coerce.number().optional().default(1969),
         url: z.string().nullable().optional().default(''),
       })
     )
-    .array(),
+    .array()
+    .optional()
+    .default([]),
 })
 
 /////////////////////////////////////////
