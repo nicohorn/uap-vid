@@ -1,10 +1,10 @@
-# Native install scripts pnpm v10+ requires explicit approval for.
-# This file is read even in non-monorepo projects starting in pnpm v11
-# (the equivalent `pnpm.onlyBuiltDependencies` key in package.json is ignored).
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - esbuild
-  - prisma
-  - sharp
-  - unrs-resolver
+# Native install scripts pnpm v11+ requires explicit approval for.
+# `allowBuilds` is the v11 replacement for v10's `onlyBuiltDependencies`
+# and is read even in non-monorepo projects.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
