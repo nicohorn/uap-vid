@@ -116,6 +116,10 @@ model User {
   dni                Int?
   password           String?
   image              String?
+  cvFileKey          String?
+  cvFileName         String?
+  cvFileSize         Int?
+  cvUploadedAt       DateTime?            @db.Date
   role               Role                 @default(RESEARCHER)
   Review             Review[]
   AcademicUnits      AcademicUnit[]       @relation(fields: [AcademicUnitIds], references: [id])
