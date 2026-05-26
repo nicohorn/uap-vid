@@ -52,3 +52,6 @@ sensitive.json
 nul
 
 .claude
+
+# local uploads (CVs, etc.)
+/uploads
