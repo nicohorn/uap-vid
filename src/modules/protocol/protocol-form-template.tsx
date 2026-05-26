@@ -12,11 +12,18 @@ import {
   IntroductionForm,
   PublicationForm,
 } from '@protocol/form-sections'
+import { TtIdentificationForm } from '@protocol/form-sections/teacher-thesis/identification-form'
+import { TtDurationForm } from '@protocol/form-sections/teacher-thesis/duration-form'
+import { TtDescriptionForm } from '@protocol/form-sections/teacher-thesis/description-form'
+import { TtIntroductionForm } from '@protocol/form-sections/teacher-thesis/introduction-form'
+import { TtMethodForm } from '@protocol/form-sections/teacher-thesis/method-form'
+import { TtPublicationForm } from '@protocol/form-sections/teacher-thesis/publication-form'
+import { TtDirectorsCvForm } from '@protocol/form-sections/teacher-thesis/directors-cv-form'
 import { ProtocolSchema } from '@utils/zod'
 import { IdentificationDraftSchema } from '@utils/zod/protocol'
 import { motion } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import {
   AlertCircle,
   ArrowNarrowLeft,
@@ -34,18 +41,39 @@ import type { z } from 'zod'
 import { createProtocol, updateProtocolById } from '@repositories/protocol'
 import { ClearLocalStorageButton } from 'modules/clear-local-storage-button'
 import { chartToBibliographyHtml } from '@utils/bibliography'
+import type { ProtocolType } from '@utils/protocol-types'
 
-const sectionMapper: { [key: number]: JSX.Element } = {
-  0: <IdentificationForm />,
-  1: <DurationForm />,
-  2: <BudgetForm />,
-  3: <DescriptionForm />,
-  4: <IntroductionForm />,
-  5: <PublicationForm />,
-  6: <BibliographyForm />,
+type SectionDef = {
+  key: string
+  path: string
+  label: string
+  render: () => JSX.Element
 }
 
-// Helper functions
+const standardSections: SectionDef[] = [
+  { key: '0', path: 'sections.identification', label: 'Identificación', render: () => <IdentificationForm /> },
+  { key: '1', path: 'sections.duration', label: 'Tipo y duración', render: () => <DurationForm /> },
+  { key: '2', path: 'sections.budget', label: 'Presupuesto', render: () => <BudgetForm /> },
+  { key: '3', path: 'sections.description', label: 'Descripción', render: () => <DescriptionForm /> },
+  { key: '4', path: 'sections.introduction', label: 'Introducción', render: () => <IntroductionForm /> },
+  { key: '5', path: 'sections.publication', label: 'Producción', render: () => <PublicationForm /> },
+  { key: '6', path: 'sections.bibliography', label: 'Bibliografía', render: () => <BibliographyForm /> },
+]
+
+const teacherThesisSections: SectionDef[] = [
+  { key: '0', path: 'sections.teacherThesis.identification', label: 'Identificación', render: () => <TtIdentificationForm /> },
+  { key: '1', path: 'sections.teacherThesis.duration', label: 'Duración y cronograma', render: () => <TtDurationForm /> },
+  { key: '2', path: 'sections.teacherThesis.description', label: 'Descripción', render: () => <TtDescriptionForm /> },
+  { key: '3', path: 'sections.teacherThesis.introduction', label: 'Introducción', render: () => <TtIntroductionForm /> },
+  { key: '4', path: 'sections.teacherThesis.method', label: 'Método', render: () => <TtMethodForm /> },
+  { key: '5', path: 'sections.teacherThesis.publication', label: 'Publicación', render: () => <TtPublicationForm /> },
+  { key: '6', path: 'sections.bibliography', label: 'Bibliografía', render: () => <BibliographyForm /> },
+  { key: '7', path: 'sections.teacherThesis.directorsCv', label: 'CV del director', render: () => <TtDirectorsCvForm /> },
+]
+
+const getSectionsForType = (type: ProtocolType | string | undefined): SectionDef[] =>
+  type === 'TEACHER_THESIS' ? teacherThesisSections : standardSections
+
 const sanitizeObjectId = (value: string | null | undefined) =>
   value === '' ? null : value
 
@@ -55,7 +83,6 @@ const clearInvalidLocalStorage = () => {
       const tempProtocol = localStorage.getItem('temp-protocol')
       if (tempProtocol) {
         const parsed = JSON.parse(tempProtocol)
-        // If the data has invalid hours values, clear it
         const hasInvalidHours = parsed?.sections?.identification?.team?.some(
           (member: any) =>
             member.hours === 0 ||
@@ -68,12 +95,9 @@ const clearInvalidLocalStorage = () => {
           return
         }
 
-        // Migrate old bibliography format (chart-only) to new format (content).
-        // Old drafts only have `chart`; the new form binds to `content`.
         const bibliography = parsed?.sections?.bibliography
         const hasLegacyBibliography =
-          bibliography &&
-          bibliography.chart.length > 0
+          bibliography && bibliography.chart?.length > 0
         if (hasLegacyBibliography) {
           parsed.sections.bibliography = {
             chart: [],
@@ -83,11 +107,59 @@ const clearInvalidLocalStorage = () => {
         }
       }
     } catch (error) {
-      // If parsing fails, clear the localStorage
       localStorage.removeItem('temp-protocol')
     }
   }
 }
+
+const getDefaultTeacherThesis = () => ({
+  identification: {
+    year: null,
+    postgraduateProgram: '',
+    thesisType: '',
+    sponsoringFaculty: '',
+    thesisCandidate: { name: '', role: 'Tesista', weeklyHours: 0 },
+    director: { name: '', role: 'Director', weeklyHours: 0 },
+    additionalMembers: [],
+    eligibleEvaluators: [],
+  },
+  duration: {
+    durationMonths: '',
+    schedule: [
+      { semester: 1, activities: [] },
+      { semester: 2, activities: [] },
+    ],
+  },
+  description: {
+    generalDiscipline: '',
+    specificArea: '',
+    researchLine: '',
+    technicalAbstract: '',
+    keywords: [],
+    applicationField: '',
+    socioeconomicObjective: '',
+    researchType: '',
+  },
+  introduction: {
+    stateOfTheArt: '',
+    justification: '',
+    problemDefinition: '',
+    objectives: '',
+  },
+  method: {
+    design: '',
+    participants: '',
+    location: '',
+    dataCollectionInstruments: '',
+    dataCollectionProcedures: '',
+    dataAnalysis: '',
+    ethicalConsiderations: '',
+    ethicsCommitteeStatus: '',
+    theoreticalMethodology: '',
+  },
+  publication: { publicationType: '', publicationPlan: '' },
+  directorsCv: [],
+})
 
 const getDefaultSections = () => ({
   methodology: {
@@ -130,6 +202,7 @@ const getDefaultSections = () => ({
       },
     ],
   },
+  teacherThesis: getDefaultTeacherThesis(),
 })
 
 const sanitizeTeamMember = (member: any) => ({
@@ -154,6 +227,8 @@ const sanitizeProtocolData = (protocol: any) => {
 
   return {
     ...protocol,
+    protocolType: protocol.protocolType || 'STANDARD',
+    protocolSubtype: protocol.protocolSubtype || null,
     convocatoryId: sanitizeObjectId(protocol.convocatoryId),
     sections: {
       ...protocol.sections,
@@ -161,7 +236,7 @@ const sanitizeProtocolData = (protocol: any) => {
         ...defaults.identification,
         ...protocol.sections.identification,
         courseId: sanitizeObjectId(protocol.sections.identification?.courseId),
-        careerId: protocol.sections.identification?.careerId || '', // Convert null to empty string for form compatibility
+        careerId: protocol.sections.identification?.careerId || '',
         academicUnitIds:
           protocol.sections.identification?.academicUnitIds || [],
         team:
@@ -187,6 +262,8 @@ const sanitizeProtocolData = (protocol: any) => {
             hasContent ? incoming.content : chartToBibliographyHtml(incoming.chart),
         }
       })(),
+      teacherThesis:
+        protocol.sections.teacherThesis ?? defaults.teacherThesis,
     },
   }
 }
@@ -198,11 +275,10 @@ export default function ProtocolForm({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [section, setSection] = useState(pathname?.split('/')[3])
+  const [section, setSection] = useState(pathname?.split('/')[3] || '0')
 
   const [isPending, startTransition] = useTransition()
 
-  // Clear invalid localStorage data on component mount
   useEffect(() => {
     clearInvalidLocalStorage()
   }, [])
@@ -220,24 +296,33 @@ export default function ProtocolForm({
     validateInputOnBlur: true,
   })
 
+  const sections = useMemo(
+    () => getSectionsForType(form.values.protocolType),
+    [form.values.protocolType]
+  )
+
+  // Keep the active section in bounds when the type (and therefore section list) changes
   useEffect(() => {
-    // Validate if not existing path goes to section 0
+    if (!sections.find((s) => s.key === section)) {
+      setSection('0')
+    }
+  }, [sections, section])
+
+  useEffect(() => {
+    const validKeys = sections.map((s) => s.key)
     if (
       pathname &&
-      !['0', '1', '2', '3', '4', '5', '6'].includes(
-        pathname?.split('/')[3]
-      )
-    )
+      !validKeys.includes(pathname?.split('/')[3])
+    ) {
       router.push('/protocols/' + pathname?.split('/')[2] + '/0')
-  }, [pathname, router])
+    }
+  }, [pathname, router, sections])
 
   const upsertProtocol = useCallback(
     async (protocol: z.infer<typeof ProtocolSchema>) => {
       const { id, ...restOfProtocol } = protocol
 
-      // flow for protocols that don't have ID
       if (!id) {
-        // Ensure all required sections are present with default values
         const completeProtocol = sanitizeProtocolData(
           restOfProtocol as Protocol
         )
@@ -252,7 +337,6 @@ export default function ProtocolForm({
               intent: 'success',
             })
 
-            // Only when created remove from LocalStorage
             localStorage.removeItem('temp-protocol')
 
             return startTransition(() => {
@@ -330,6 +414,12 @@ export default function ProtocolForm({
     [form, section]
   )
 
+  const activeSection = sections.find((s) => s.key === section) ?? sections[0]
+  const sectionIndex = sections.findIndex((s) => s.key === section)
+  const isFirst = sectionIndex <= 0
+  const isLast = sectionIndex >= sections.length - 1
+  const isTeacherThesis = form.values.protocolType === 'TEACHER_THESIS'
+
   return (
     <ProtocolProvider form={form}>
       <form
@@ -340,40 +430,44 @@ export default function ProtocolForm({
         }}
         onSubmit={(e) => {
           e.preventDefault()
-          console.log(form.getValues().sections.identification.team)
-          // For draft saves, validate with the more lenient draft schema
-          try {
-            IdentificationDraftSchema.parse(form.values.sections.identification)
-          } catch (error: any) {
-            const errorMessage =
-              error.errors?.[0]?.message ||
-              'Hay errores en la sección de identificación'
-            notifications.show({
-              title: 'No se pudo guardar',
-              message: errorMessage,
-              intent: 'error',
-            })
-            return form.validate()
+
+          // Identification draft validation only applies to standard protocols.
+          // TT uses a different identification shape (no team/academic-units/etc.).
+          if (!isTeacherThesis) {
+            try {
+              IdentificationDraftSchema.parse(
+                form.values.sections.identification
+              )
+            } catch (error: any) {
+              const errorMessage =
+                error.errors?.[0]?.message ||
+                'Hay errores en la sección de identificación'
+              notifications.show({
+                title: 'No se pudo guardar',
+                message: errorMessage,
+                intent: 'error',
+              })
+              return form.validate()
+            }
           }
 
-          // Sanitize data before saving - convert empty strings to null for database
           const sanitizedValues = {
             ...form.values,
             sections: {
               ...form.values.sections,
               identification: {
-                ...form.values.sections.identification,
+                ...form.values.sections.identification!,
                 careerId: sanitizeObjectId(
-                  form.values.sections.identification.careerId
+                  form.values.sections.identification!.careerId
                 ),
                 courseId: sanitizeObjectId(
-                  form.values.sections.identification.courseId
+                  form.values.sections.identification!.courseId
                 ),
               },
             },
           }
 
-          upsertProtocol(sanitizedValues)
+          upsertProtocol(sanitizedValues as any)
         }}
       >
         <InfoTooltip>
@@ -401,53 +495,24 @@ export default function ProtocolForm({
           transition={{ duration: 0.4, delay: 0.4 }}
           className="mx-auto mt-2 flex w-fit flex-wrap items-center justify-center gap-0.5 rounded-lg border border-black/5 p-0.5 dark:border-white/5"
         >
-          <SectionButton
-            path={'sections.identification'}
-            label={'Identificación'}
-            value={'0'}
-          />
-          <SectionButton
-            path={'sections.duration'}
-            label={'Tipo y duración'}
-            value={'1'}
-          />
-          <SectionButton
-            path={'sections.budget'}
-            label={'Presupuesto'}
-            value={'2'}
-          />
-          <SectionButton
-            path={'sections.description'}
-            label={'Descripción'}
-            value={'3'}
-          />
-          <SectionButton
-            path={'sections.introduction'}
-            label={'Introducción'}
-            value={'4'}
-          />
-
-          <SectionButton
-            path={'sections.publication'}
-            label={'Producción'}
-            value={'5'}
-          />
-
-          <SectionButton
-            path={'sections.bibliography'}
-            label={'Bibliografía'}
-            value={'6'}
-          />
+          {sections.map((s) => (
+            <SectionButton
+              key={s.key}
+              path={s.path}
+              label={s.label}
+              value={s.key}
+            />
+          ))}
         </motion.div>
 
-        {sectionMapper[Number(section)]}
+        {activeSection.render()}
 
         <div className="mt-12 flex w-full justify-between">
           <Button
             type="button"
             plain
-            disabled={section === '0'}
-            onClick={() => setSection((p) => (Number(p) - 1).toString())}
+            disabled={isFirst}
+            onClick={() => setSection(sections[sectionIndex - 1]?.key ?? '0')}
           >
             <ArrowNarrowLeft data-slot="icon" />
             Sección previa
@@ -459,8 +524,8 @@ export default function ProtocolForm({
           <Button
             type="button"
             plain
-            disabled={section === '6'}
-            onClick={() => setSection((p) => (Number(p) + 1).toString())}
+            disabled={isLast}
+            onClick={() => setSection(sections[sectionIndex + 1]?.key ?? sections[sections.length - 1].key)}
           >
             Sección siguiente
             <ArrowNarrowRight data-slot="icon" />

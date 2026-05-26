@@ -83,22 +83,24 @@ model Logs {
 }
 
 model Protocol {
-  id             String           @id @default(auto()) @map("_id") @db.ObjectId
-  protocolNumber String?
-  createdAt      DateTime?        @default(now()) @db.Date
-  researcherId   String           @db.ObjectId
-  researcher     User             @relation(fields: [researcherId], references: [id])
-  state          ProtocolState    @default(DRAFT)
-  reviews        Review[]
-  sections       ProtocolSections
-  convocatory    Convocatory?     @relation(fields: [convocatoryId], references: [id])
-  convocatoryId  String?          @db.ObjectId
-  anualBudgets   AnualBudget[]
-  anualBudgetIds String[]
-  logs           Logs[]
-  ChatMessage    ChatMessage[]
-  flags          ProtocolFlag[]
-  executions     Execution[]
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  protocolNumber  String?
+  createdAt       DateTime?        @default(now()) @db.Date
+  researcherId    String           @db.ObjectId
+  researcher      User             @relation(fields: [researcherId], references: [id])
+  state           ProtocolState    @default(DRAFT)
+  protocolType    String           @default("STANDARD")
+  protocolSubtype String?
+  reviews         Review[]
+  sections        ProtocolSections
+  convocatory     Convocatory?     @relation(fields: [convocatoryId], references: [id])
+  convocatoryId   String?          @db.ObjectId
+  anualBudgets    AnualBudget[]
+  anualBudgetIds  String[]
+  logs            Logs[]
+  ChatMessage     ChatMessage[]
+  flags           ProtocolFlag[]
+  executions      Execution[]
 }
 
 type ProtocolFlag {
@@ -333,6 +335,101 @@ type ProtocolSections {
   introduction   ProtocolSectionsIntroduction
   methodology    ProtocolSectionsMethodology
   publication    ProtocolSectionsPublication
+  teacherThesis  ProtocolSectionsTeacherThesis?
+}
+
+type ProtocolSectionsTeacherThesis {
+  identification ProtocolSectionsTeacherThesisIdentification
+  duration       ProtocolSectionsTeacherThesisDuration
+  description    ProtocolSectionsTeacherThesisDescription
+  introduction   ProtocolSectionsTeacherThesisIntroduction
+  method         ProtocolSectionsTeacherThesisMethod
+  publication    ProtocolSectionsTeacherThesisPublication
+  directorsCv    ProtocolSectionsTeacherThesisDirectorCv[]
+}
+
+type ProtocolSectionsTeacherThesisIdentification {
+  year                Int?
+  postgraduateProgram String
+  thesisType          String
+  sponsoringFaculty   String
+  thesisCandidate     ProtocolSectionsTeacherThesisTeamMember
+  director            ProtocolSectionsTeacherThesisTeamMember
+  additionalMembers   ProtocolSectionsTeacherThesisTeamMember[]
+  eligibleEvaluators  String[]
+}
+
+type ProtocolSectionsTeacherThesisTeamMember {
+  name        String
+  role        String
+  weeklyHours Int
+}
+
+type ProtocolSectionsTeacherThesisDuration {
+  durationMonths String
+  schedule       ProtocolSectionsTeacherThesisScheduleEntry[]
+}
+
+type ProtocolSectionsTeacherThesisScheduleEntry {
+  semester   Int
+  activities String[]
+}
+
+type ProtocolSectionsTeacherThesisDescription {
+  generalDiscipline      String
+  specificArea           String
+  researchLine           String
+  technicalAbstract      String
+  keywords               String[]
+  applicationField       String
+  socioeconomicObjective String
+  researchType           String
+}
+
+type ProtocolSectionsTeacherThesisIntroduction {
+  stateOfTheArt     String
+  justification     String
+  problemDefinition String
+  objectives        String
+}
+
+type ProtocolSectionsTeacherThesisMethod {
+  design                    String?
+  participants              String?
+  location                  String?
+  dataCollectionInstruments String?
+  dataCollectionProcedures  String?
+  dataAnalysis              String?
+  ethicalConsiderations     String?
+  ethicsCommitteeStatus     String?
+  theoreticalMethodology    String?
+}
+
+type ProtocolSectionsTeacherThesisPublication {
+  publicationType String
+  publicationPlan String
+}
+
+type ProtocolSectionsTeacherThesisDirectorCv {
+  name       String
+  education  ProtocolSectionsTeacherThesisEducationEntry[]
+  indicators ProtocolSectionsTeacherThesisIndicators
+}
+
+type ProtocolSectionsTeacherThesisEducationEntry {
+  degree      String
+  institution String
+  date        String
+}
+
+type ProtocolSectionsTeacherThesisIndicators {
+  publications            String
+  rdProjects              String
+  workSupervision         String
+  scientificManagement    String
+  internationalCommittees String
+  editorialCommittees     String
+  awards                  String
 }
 
 type ProtocolSectionsBibliography {

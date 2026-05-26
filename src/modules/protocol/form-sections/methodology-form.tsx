@@ -27,12 +27,12 @@ export function MethodologyForm() {
           />
 
           {/* Conditionally render according to type */}
-          {form.values.sections.methodology.type ===
+          {form.values.sections.methodology!.type ===
             'Investigaciones cuantitativas, cualitativas, mixtas o experimentales' && (
             <QuantitativeQualitativeMixedOrExperimental />
           )}
 
-          {form.values.sections.methodology.type ===
+          {form.values.sections.methodology!.type ===
             'Investigaciones de tipo teóricas' && <Theoretical />}
         </FieldGroup>
       </Fieldset>
@@ -78,7 +78,7 @@ const QuantitativeQualitativeMixedOrExperimental = () => {
         })}
       />
 
-      {form.values.sections.methodology.humanAnimalOrDb && (
+      {form.values.sections.methodology!.humanAnimalOrDb && (
         <>
           <FormTitapTextarea
             label="Procedimientos de recolección"

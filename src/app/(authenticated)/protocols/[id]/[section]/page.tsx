@@ -23,6 +23,8 @@ export default async function Page({
           protocol={{
             state: ProtocolState.DRAFT,
             researcherId: session.user.id,
+            protocolType: 'STANDARD',
+            protocolSubtype: null,
             sections: initialSectionValues,
           }}
         />
@@ -41,11 +43,12 @@ export default async function Page({
         Action.EDIT_BY_OWNER
       : Action.EDIT,
       session.user.role,
-      protocol.state
+      protocol.state,
+      protocol.protocolType
     )
 
   if (canEdit) {
-    return <ProtocolForm protocol={protocol} />
+    return <ProtocolForm protocol={protocol as any} />
   }
 
   redirect('/protocols')

@@ -10,6 +10,14 @@ import { FormCombobox } from '@shared/form/form-combobox'
 import { FieldGroup, Fieldset, Legend } from '@components/fieldset'
 import type { Course } from '@prisma/client'
 import { useState, useEffect } from 'react'
+import { PROTOCOL_SUBTYPES, PROTOCOL_TYPES } from '@utils/protocol-types'
+
+const dictToOptions = (d: Record<string, { code: string; label: string; description?: string }>) =>
+  Object.values(d).map((o) => ({
+    value: o.code,
+    label: o.label,
+    description: o.description,
+  }))
 import {
   getActiveCareersForForm,
   getCoursesByCareerId,
@@ -36,14 +44,14 @@ export function IdentificationForm() {
   // Load courses when component mounts if there's a selected career
   useEffect(() => {
     const loadInitialCourses = async () => {
-      const careerId = form.values.sections.identification.careerId
+      const careerId = form.values.sections.identification!.careerId
       if (careerId) {
         const result = await getCoursesByCareerId(careerId)
         setCourses(result ? result.courses : [])
       }
     }
     loadInitialCourses()
-  }, [form.values.sections.identification.careerId])
+  }, [form.values.sections.identification!.careerId])
 
   return (
     <motion.div
@@ -54,6 +62,19 @@ export function IdentificationForm() {
       <Fieldset>
         <Legend>Identificación</Legend>
         <FieldGroup>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormListbox
+              label="Tipo de protocolo"
+              description="Determina la estructura del formulario y el flujo de aprobación."
+              options={dictToOptions(PROTOCOL_TYPES)}
+              {...form.getInputProps('protocolType')}
+            />
+            <FormListbox
+              label="Subtipo"
+              options={dictToOptions(PROTOCOL_SUBTYPES)}
+              {...form.getInputProps('protocolSubtype')}
+            />
+          </div>
           <FormInput
             label="Título descriptivo del proyecto"
             {...form.getInputProps('sections.identification.title')}

@@ -201,6 +201,8 @@ const findProtocolByIdWithResearcher = cache(
           createdAt: true,
           protocolNumber: true,
           state: true,
+          protocolType: true,
+          protocolSubtype: true,
           researcherId: true,
           convocatoryId: true,
           anualBudgetIds: true,
@@ -227,6 +229,8 @@ const getProtocolMetadata = cache(
         protocolNumber: true,
         createdAt: true,
         state: true,
+        protocolType: true,
+        protocolSubtype: true,
         flags: true,
         convocatory: { select: { id: true, name: true } },
         researcher: {
@@ -720,6 +724,8 @@ const getProtocolsByRole = cache(
       id: true,
       protocolNumber: true,
       state: true,
+      protocolType: true,
+      protocolSubtype: true,
       createdAt: true,
       convocatory: { select: { id: true, name: true, year: true } },
       logs: {

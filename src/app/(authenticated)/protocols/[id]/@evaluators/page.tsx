@@ -25,6 +25,10 @@ export default async function ReviewAssignation({
   const protocol = await getProtocolMetadata(id)
   if (!session || !protocol) return
 
+  // Teacher Thesis protocols don't have an evaluation flow — they go
+  // directly to ADMIN/SECRETARY for approval. Don't render the evaluator UI.
+  if (protocol.protocolType === 'TEACHER_THESIS') return null
+
   if (
     canAccess(Access.EVALUATORS, session.user.role) &&
     protocol.state !== ProtocolState.DRAFT

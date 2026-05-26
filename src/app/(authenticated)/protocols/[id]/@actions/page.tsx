@@ -4,6 +4,7 @@ import { findProtocolByIdWithResearcher } from '@repositories/protocol'
 import { getReviewsByProtocol } from '@repositories/review'
 import { getActionsByRoleAndState, canExecute } from '@utils/scopes'
 import { ProtocolSchema } from '@utils/zod'
+import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
 import { getServerSession } from 'next-auth'
@@ -31,7 +32,11 @@ export default async function ActionsPage({
   if (!protocol || !session) return
   const reviews = await getReviewsByProtocol(protocol.id)
 
-  const actions = getActionsByRoleAndState(session.user.role, protocol.state)
+  const actions = getActionsByRoleAndState(
+    session.user.role,
+    protocol.state,
+    protocol.protocolType
+  )
   let filteredActions = actions
   const isAdmin = session.user.role === 'ADMIN'
 
@@ -68,8 +73,11 @@ export default async function ActionsPage({
 
   // --- Checks for Publish, Accept, and Approve actions ---
 
-  // Publish
-  const validToPublish = ProtocolSchema.safeParse(protocol)
+  // Publish — TT protocols validate only their own sections; standard validates everything.
+  const validToPublish =
+    protocol.protocolType === 'TEACHER_THESIS'
+      ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
+      : ProtocolSchema.safeParse(protocol)
   checkResults.publish.isValid = validToPublish.success
   checkResults.publish.hasConvocatory = !!protocol.convocatoryId
   if (!validToPublish.success) {
@@ -116,7 +124,8 @@ export default async function ActionsPage({
       Action.EDIT_BY_OWNER
     : Action.EDIT,
     session.user.role,
-    protocol.state
+    protocol.state,
+    protocol.protocolType
   )
   checkResults.edit.canEdit = canEditNormally
   if (!canEditNormally) {

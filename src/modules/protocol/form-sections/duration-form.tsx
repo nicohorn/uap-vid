@@ -31,8 +31,8 @@ export function DurationForm() {
           />
           <FormListbox
             label="Duración"
-            disabled={!form.values.sections.duration.modality}
-            options={duration(form.values.sections.duration.modality).map(
+            disabled={!form.values.sections.duration!.modality}
+            options={duration(form.values.sections.duration!.modality).map(
               (e) => ({ value: e, label: e })
             )}
             {...form.getInputProps('sections.duration.duration')}
@@ -45,7 +45,7 @@ export function DurationForm() {
               )
             }}
           />
-          {form.values.sections.duration.chronogram.length > 0 && (
+          {form.values.sections.duration!.chronogram.length > 0 && (
             <ChronogramList />
           )}
         </FieldGroup>

@@ -86,4 +86,55 @@ export const initialSectionValues: z.infer<typeof SectionsSchema> = {
     chart: [],
     content: '',
   },
-}
+  teacherThesis: {
+    identification: {
+      year: null,
+      postgraduateProgram: '',
+      thesisType: '',
+      sponsoringFaculty: '',
+      thesisCandidate: { name: '', role: 'Tesista', weeklyHours: 0 },
+      director: { name: '', role: 'Director', weeklyHours: 0 },
+      additionalMembers: [],
+      eligibleEvaluators: [],
+    },
+    duration: {
+      durationMonths: '',
+      schedule: [
+        { semester: 1, activities: [] },
+        { semester: 2, activities: [] },
+      ],
+    },
+    description: {
+      generalDiscipline: '',
+      specificArea: '',
+      researchLine: '',
+      technicalAbstract: '',
+      keywords: [],
+      applicationField: '',
+      socioeconomicObjective: '',
+      researchType: '',
+    },
+    introduction: {
+      stateOfTheArt: '',
+      justification: '',
+      problemDefinition: '',
+      objectives: '',
+    },
+    method: {
+      design: '',
+      participants: '',
+      location: '',
+      dataCollectionInstruments: '',
+      dataCollectionProcedures: '',
+      dataAnalysis: '',
+      ethicalConsiderations: '',
+      ethicsCommitteeStatus: '',
+      theoreticalMethodology: '',
+    },
+    publication: {
+      publicationType: '',
+      publicationPlan: '',
+    },
+    directorsCv: [],
+  },
+} as any
