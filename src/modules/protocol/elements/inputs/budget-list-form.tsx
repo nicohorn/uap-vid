@@ -88,7 +88,7 @@ export function BudgetList() {
                 <FormListbox
                   className="col-span-3"
                   label=""
-                  options={years(form.values.sections.duration.duration).map(
+                  options={years(form.values.sections.duration!.duration).map(
                     (e) => ({ value: e, label: e })
                   )}
                   {...form.getInputProps(
@@ -137,7 +137,7 @@ export function BudgetList() {
         <span>Total:</span>
         <Strong>
           {currencyFormatter.format(
-            form.values.sections.budget.expenses.reduce((acc, val) => {
+            form.values.sections.budget!.expenses.reduce((acc, val) => {
               return (
                 acc +
                 val.data.reduce((prev, curr) => {

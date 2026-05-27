@@ -75,6 +75,33 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
   ],
 }
 
+/**
+ * Teacher Thesis protocols have a shortened lifecycle (DRAFT → PUBLISHED →
+ * ACCEPTED) — no methodologist/scientist evaluation, no anual-budget flow.
+ * Approval is direct: SECRETARY or ADMIN flips PUBLISHED to ACCEPTED.
+ */
+const TT_STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
+  [ProtocolState.DRAFT]: [Action.EDIT_BY_OWNER, Action.PUBLISH, Action.DELETE],
+  [ProtocolState.PUBLISHED]: [
+    Action.ACCEPT,
+    Action.EDIT,
+    Action.DISCONTINUE,
+  ],
+  [ProtocolState.ACCEPTED]: [Action.EDIT, Action.DISCONTINUE],
+  [ProtocolState.METHODOLOGICAL_EVALUATION]: [],
+  [ProtocolState.SCIENTIFIC_EVALUATION]: [],
+  [ProtocolState.ON_GOING]: [],
+  [ProtocolState.FINISHED]: [],
+  [ProtocolState.DISCONTINUED]: [Action.REACTIVATE],
+  [ProtocolState.DELETED]: [],
+}
+
+const isTeacherThesis = (protocolType?: string | null) =>
+  protocolType === 'TEACHER_THESIS'
+
+const getStateScope = (state: ProtocolState, protocolType?: string | null) =>
+  isTeacherThesis(protocolType) ? TT_STATE_SCOPE[state] : STATE_SCOPE[state]
+
 /** ProtocolState Action Scope
  * - Check if an action can be performed according current protocol state
  */
@@ -133,8 +160,20 @@ export const canAccess = (access: Access, role: Role) =>
  * @param state
  * @returns
  */
-export const canExecute = (action: Action, role: Role, state: ProtocolState) =>
-  Role_SCOPE[role].includes(action) && STATE_SCOPE[state].includes(action)
+export const canExecute = (
+  action: Action,
+  role: Role,
+  state: ProtocolState,
+  protocolType?: string | null
+) =>
+  Role_SCOPE[role].includes(action) &&
+  getStateScope(state, protocolType).includes(action)
 
-export const getActionsByRoleAndState = (role: Role, state: ProtocolState) =>
-  Role_SCOPE[role].filter((action) => STATE_SCOPE[state].includes(action))
+export const getActionsByRoleAndState = (
+  role: Role,
+  state: ProtocolState,
+  protocolType?: string | null
+) =>
+  Role_SCOPE[role].filter((action) =>
+    getStateScope(state, protocolType).includes(action)
+  )

@@ -32,10 +32,10 @@ export function DescriptionForm() {
           <FormCombobox
             label="Línea de investigación"
             options={
-              !lines(form.values.sections.description.discipline) ?
+              !lines(form.values.sections.description!.discipline) ?
                 []
                 // @ts-ignore
-              : lines(form.values.sections.description.discipline).map((e) => ({
+              : lines(form.values.sections.description!.discipline).map((e) => ({
                   value: e,
                   label: e,
                 }))

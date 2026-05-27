@@ -34,6 +34,7 @@ import {
 } from 'tabler-icons-react'
 import { FlagsDialogAtom } from './flags/flags-dialog'
 import { ProtocolSchema } from '@utils/zod'
+import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 import { useAtom } from 'jotai'
 import { reactivateProtocolAndAnualBudget } from '@actions/anual-budget/action'
 
@@ -256,7 +257,10 @@ export function ActionsDropdown({
 
         // Normal flow for non-admin or valid protocol
         console.log('✅ Taking NORMAL FLOW path')
-        const parsed = ProtocolSchema.safeParse(protocol)
+        const parsed =
+          protocol.protocolType === 'TEACHER_THESIS'
+            ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
+            : ProtocolSchema.safeParse(protocol)
         if (parsed.error) {
           notifications.show({
             title: 'El protocolo no está completo',

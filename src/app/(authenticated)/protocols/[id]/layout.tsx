@@ -61,7 +61,8 @@ export default async function Layout({
   const isReviewFormShown = canExecute(
     Action.REVIEW,
     session.user.role,
-    protocol.state
+    protocol.state,
+    protocol.protocolType
   )
 
   const areThereTeamMembersNotConfirmed = protocol.sections.identification.team

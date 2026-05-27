@@ -18,6 +18,7 @@ import { ContainerAnimations } from '../../elements/container-animations'
 import type { ReactNode } from 'react'
 import { Researcher } from './researcher'
 import { AssingConvocatoryDialog } from './assign-convocatory-dialog'
+import { PROTOCOL_SUBTYPES, PROTOCOL_TYPES } from '@utils/protocol-types'
 
 export async function ProtocolMetadata({
   params,
@@ -151,6 +152,22 @@ export async function ProtocolMetadata({
                 {ProtocolStatesDictionary[protocol.state]}
               </Badge>
             </Info>
+            <Info content="Tipo de protocolo">
+              <Badge color="indigo" className="!text-sm/6 font-semibold">
+                {(PROTOCOL_TYPES as Record<string, { label: string }>)[
+                  protocol.protocolType
+                ]?.label ?? protocol.protocolType}
+              </Badge>
+            </Info>
+            {protocol.protocolSubtype && (
+              <Info content="Subtipo">
+                <Badge color="violet" className="!text-sm/6 font-semibold">
+                  {(PROTOCOL_SUBTYPES as Record<string, { label: string }>)[
+                    protocol.protocolSubtype
+                  ]?.label ?? protocol.protocolSubtype}
+                </Badge>
+              </Info>
+            )}
             {(
               session.user.role === 'ADMIN' || session.user.role === 'SECRETARY'
             ) ?

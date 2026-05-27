@@ -80,7 +80,7 @@ export default function TeamMemberListForm() {
 
   // Helper function to check if a team member is deactivated
   const isTeamMemberDeactivated = (index: number) => {
-    const teamMember = form.getValues().sections.identification.team[index]
+    const teamMember = form.getValues().sections.identification!.team[index]
     return !!(
       teamMember?.assignments &&
       teamMember.assignments.length > 0 &&
@@ -96,7 +96,7 @@ export default function TeamMemberListForm() {
   }
 
   const showDeactivateDialog = (index: number) => {
-    const teamMember = form.getValues().sections.identification.team[index]
+    const teamMember = form.getValues().sections.identification!.team[index]
     const memberName = teamMember.name || 'Miembro sin nombre'
 
     setDeactivateDialog({
@@ -107,7 +107,7 @@ export default function TeamMemberListForm() {
   }
 
   const showReactivateDialog = (index: number) => {
-    const teamMember = form.getValues().sections.identification.team[index]
+    const teamMember = form.getValues().sections.identification!.team[index]
     const memberName = teamMember.name || 'Miembro sin nombre'
 
     setReactivateDialog({
@@ -140,7 +140,7 @@ export default function TeamMemberListForm() {
         notifications.show(result.notification)
 
         // Update the local form state to reflect the deactivation immediately
-        const currentTeam = form.getValues().sections.identification.team
+        const currentTeam = form.getValues().sections.identification!.team
         const updatedTeam = currentTeam.map((member, index) => {
           if (index === teamMemberIndex) {
             // There should only be one assignment per team member
@@ -209,7 +209,7 @@ export default function TeamMemberListForm() {
         notifications.show(result.notification)
 
         // Update the local form state to reflect the reactivation immediately
-        const currentTeam = form.getValues().sections.identification.team
+        const currentTeam = form.getValues().sections.identification!.team
         const updatedTeam = currentTeam.map((member, index) => {
           if (index === teamMemberIndex) {
             // Find the deactivated assignment (with a 'to' date) and reactivate it
@@ -278,7 +278,7 @@ export default function TeamMemberListForm() {
         <span />
         {form
           .getValues()
-          .sections.identification.team.map((_: any, index: number) => {
+          .sections.identification!.team.map((_: any, index: number) => {
             const isDeactivated = isTeamMemberDeactivated(index)
             const rowClasses =
               isDeactivated ?
@@ -470,7 +470,7 @@ export default function TeamMemberListForm() {
         outline
         onClick={() => {
           const currentTeamLength =
-            form.values.sections.identification.team.length
+            form.values.sections.identification!.team.length
           const isFirstMember = currentTeamLength === 0
 
           form.insertListItem('sections.identification.team', {
@@ -488,7 +488,7 @@ export default function TeamMemberListForm() {
           setTimeout(() => {
             document
               .getElementById(
-                `row-${form.values.sections.identification.team.length}`
+                `row-${form.values.sections.identification!.team.length}`
               )
               ?.getElementsByTagName('input')[0]
               .focus()

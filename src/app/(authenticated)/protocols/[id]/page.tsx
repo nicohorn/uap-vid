@@ -12,5 +12,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     redirect('/protocols')
   }
 
-  return <View sections={protocol.sections} />
+  return (
+    <View
+      sections={protocol.sections}
+      protocolType={protocol.protocolType}
+    />
+  )
 }

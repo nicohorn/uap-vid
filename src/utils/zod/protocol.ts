@@ -2,6 +2,25 @@ import { z } from 'zod'
 import { BudgetSchema } from './budget'
 import { IdentificationTeamSchema } from './team'
 import { ProtocolStateSchema } from './enums'
+import { TeacherThesisSchema } from './teacher-thesis'
+import {
+  PROTOCOL_SUBTYPES,
+  PROTOCOL_TYPES,
+  type ProtocolSubtype,
+  type ProtocolType,
+} from '../protocol-types'
+
+const protocolTypeKeys = Object.keys(PROTOCOL_TYPES) as [
+  ProtocolType,
+  ...ProtocolType[],
+]
+const protocolSubtypeKeys = Object.keys(PROTOCOL_SUBTYPES) as [
+  ProtocolSubtype,
+  ...ProtocolSubtype[],
+]
+
+export const ProtocolTypeSchema = z.enum(protocolTypeKeys)
+export const ProtocolSubtypeSchema = z.enum(protocolSubtypeKeys)
 
 /////////////////////////////////////////
 // PROTOCOL SECTIONS SCHEMAS
@@ -250,22 +269,23 @@ export const PublicationSchema = z.object({
 
 export const SectionsSchema = z
   .object({
-    bibliography: z.lazy(() => BibliographySchema),
-    budget: z.lazy(() => BudgetSchema),
-    description: z.lazy(() => DescriptionSchema),
-    duration: z.lazy(() => DurationSchema),
-    identification: z.lazy(() => IdentificationSchema),
-    introduction: z.lazy(() => IntroductionSchema),
-    methodology: z.lazy(() => MethodologySchema),
-    publication: z.lazy(() => PublicationSchema),
+    bibliography: z.lazy(() => BibliographySchema).optional(),
+    budget: z.lazy(() => BudgetSchema).optional(),
+    description: z.lazy(() => DescriptionSchema).optional(),
+    duration: z.lazy(() => DurationSchema).optional(),
+    identification: z.lazy(() => IdentificationSchema).optional(),
+    introduction: z.lazy(() => IntroductionSchema).optional(),
+    methodology: z.lazy(() => MethodologySchema).optional(),
+    publication: z.lazy(() => PublicationSchema).optional(),
+    teacherThesis: z.lazy(() => TeacherThesisSchema).optional(),
   })
   .refine(
     (value) => {
       if (
-        value.duration.modality ===
+        value.duration?.modality ===
         'Proyecto de investigación desde las cátedras (PIC)'
       ) {
-        return Boolean(value.identification.courseId)
+        return Boolean(value.identification?.courseId)
       }
       return true
     },
@@ -279,11 +299,45 @@ export const SectionsSchema = z
 // PROTOCOL SCHEMA
 /////////////////////////////////////////
 
-export const ProtocolSchema = z.object({
-  id: z.string().optional(),
-  createdAt: z.coerce.date().nullable().optional(),
-  state: ProtocolStateSchema,
-  researcherId: z.string(),
-  sections: z.lazy(() => SectionsSchema),
-  convocatoryId: z.string().nullish(),
-})
+export const ProtocolSchema = z
+  .object({
+    id: z.string().optional(),
+    createdAt: z.coerce.date().nullable().optional(),
+    state: ProtocolStateSchema,
+    researcherId: z.string(),
+    protocolType: ProtocolTypeSchema.default('STANDARD'),
+    protocolSubtype: ProtocolSubtypeSchema.nullable().optional(),
+    sections: z.lazy(() => SectionsSchema),
+    convocatoryId: z.string().nullish(),
+  })
+  .superRefine((data, ctx) => {
+    const requiredStandardSections = [
+      'identification',
+      'duration',
+      'budget',
+      'description',
+      'introduction',
+      'publication',
+      'bibliography',
+    ] as const
+
+    if (data.protocolType === 'TEACHER_THESIS') {
+      if (!data.sections.teacherThesis) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['sections', 'teacherThesis'],
+          message: 'Faltan datos de tesis docente',
+        })
+      }
+    } else {
+      for (const section of requiredStandardSections) {
+        if (!data.sections[section]) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['sections', section],
+            message: 'Sección requerida',
+          })
+        }
+      }
+    }
+  })
