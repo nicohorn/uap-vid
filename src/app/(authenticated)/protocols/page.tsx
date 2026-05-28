@@ -8,8 +8,10 @@ import { FileReport } from 'tabler-icons-react'
 import { ContainerAnimations } from '@elements/container-animations'
 import { getAcademicUnitsNameAndShortname } from '@repositories/academic-unit'
 import { getActiveCareersForForm } from '@repositories/career'
+import { userHasCv } from '@repositories/cv'
 import React from 'react'
 import DownloadTabularData from '@protocol/elements/download-tabular-data'
+import Info from '@shared/info'
 
 // SSR Server Component, so no need to fetch from api endpoint
 export default async function Page({
@@ -31,6 +33,7 @@ export default async function Page({
 
   const academicUnits = await getAcademicUnitsNameAndShortname()
   const careers = await getActiveCareersForForm()
+  const hasCv = await userHasCv(session.user.id)
 
   return (
     <>
@@ -40,11 +43,18 @@ export default async function Page({
           <div className="flex items-end gap-2">
             {session.user.role === 'ADMIN' && <DownloadTabularData />}
 
-            {session.user.role !== 'SCIENTIST' && (
-              <Button href={'/protocols/new/0'}>
-                <FileReport data-slot="icon" /> Nuevo proyecto
-              </Button>
-            )}
+            {session.user.role !== 'SCIENTIST' &&
+              (hasCv ? (
+                <Button href={'/protocols/new'}>
+                  <FileReport data-slot="icon" /> Nuevo proyecto
+                </Button>
+              ) : (
+                <Info content="Debés cargar tu CV en el perfil antes de crear un nuevo protocolo.">
+                  <Button href={'/profile'} color="light">
+                    <FileReport data-slot="icon" /> Cargá tu CV para crear un protocolo
+                  </Button>
+                </Info>
+              ))}
 
           </div>
         </div>

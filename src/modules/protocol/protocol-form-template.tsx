@@ -18,7 +18,6 @@ import { TtDescriptionForm } from '@protocol/form-sections/teacher-thesis/descri
 import { TtIntroductionForm } from '@protocol/form-sections/teacher-thesis/introduction-form'
 import { TtMethodForm } from '@protocol/form-sections/teacher-thesis/method-form'
 import { TtPublicationForm } from '@protocol/form-sections/teacher-thesis/publication-form'
-import { TtDirectorsCvForm } from '@protocol/form-sections/teacher-thesis/directors-cv-form'
 import { ProtocolSchema } from '@utils/zod'
 import { IdentificationDraftSchema } from '@utils/zod/protocol'
 import { motion } from 'framer-motion'
@@ -40,7 +39,11 @@ import { Button } from '@components/button'
 import type { z } from 'zod'
 import { createProtocol, updateProtocolById } from '@repositories/protocol'
 import { ClearLocalStorageButton } from 'modules/clear-local-storage-button'
-import { chartToBibliographyHtml } from '@utils/bibliography'
+import {
+  chartToBibliographyHtml,
+  chartToEntries,
+  htmlToEntries,
+} from '@utils/bibliography'
 import type { ProtocolType } from '@utils/protocol-types'
 
 type SectionDef = {
@@ -68,7 +71,6 @@ const teacherThesisSections: SectionDef[] = [
   { key: '4', path: 'sections.teacherThesis.method', label: 'Método', render: () => <TtMethodForm /> },
   { key: '5', path: 'sections.teacherThesis.publication', label: 'Publicación', render: () => <TtPublicationForm /> },
   { key: '6', path: 'sections.bibliography', label: 'Bibliografía', render: () => <BibliographyForm /> },
-  { key: '7', path: 'sections.teacherThesis.directorsCv', label: 'CV del director', render: () => <TtDirectorsCvForm /> },
 ]
 
 const getSectionsForType = (type: ProtocolType | string | undefined): SectionDef[] =>
@@ -95,15 +97,28 @@ const clearInvalidLocalStorage = () => {
           return
         }
 
+        // Migrate legacy bibliography drafts (chart-only or rich-text-only)
+        // into the new entries shape so the rewritten form has something to
+        // bind to.
         const bibliography = parsed?.sections?.bibliography
-        const hasLegacyBibliography =
-          bibliography && bibliography.chart?.length > 0
-        if (hasLegacyBibliography) {
-          parsed.sections.bibliography = {
-            chart: [],
-            content: chartToBibliographyHtml(bibliography.chart),
+        const hasEntries =
+          Array.isArray(bibliography?.entries) && bibliography.entries.length > 0
+        if (bibliography && !hasEntries) {
+          const fromChart = chartToEntries(bibliography.chart)
+          const fromHtml =
+            fromChart.length === 0 ? htmlToEntries(bibliography.content) : []
+          const entries =
+            fromChart.length > 0 ? fromChart
+            : fromHtml.length > 0 ? fromHtml
+            : []
+          if (entries.length > 0) {
+            parsed.sections.bibliography = {
+              chart: [],
+              content: '',
+              entries,
+            }
+            localStorage.setItem('temp-protocol', JSON.stringify(parsed))
           }
-          localStorage.setItem('temp-protocol', JSON.stringify(parsed))
         }
       }
     } catch (error) {
@@ -158,7 +173,6 @@ const getDefaultTeacherThesis = () => ({
     theoreticalMethodology: '',
   },
   publication: { publicationType: '', publicationPlan: '' },
-  directorsCv: [],
 })
 
 const getDefaultSections = () => ({
@@ -251,20 +265,69 @@ const sanitizeProtocolData = (protocol: any) => {
       methodology: protocol.sections.methodology || defaults.methodology,
       publication: protocol.sections.publication || defaults.publication,
       bibliography: (() => {
-        const incoming = protocol.sections.bibliography
+        const incoming = protocol.sections.bibliography as any
         if (!incoming) return defaults.bibliography
-        const hasContent =
-          typeof incoming.content === 'string' &&
-          incoming.content.trim().length > 0
+        const existingEntries = Array.isArray(incoming.entries) ? incoming.entries : []
+        // Auto-derive entries from legacy shapes when the protocol has none
+        // yet — so users editing an old protocol see their bibliography
+        // populated into the new row-based form.
+        const entries =
+          existingEntries.length > 0 ? existingEntries
+          : incoming.chart?.length ? chartToEntries(incoming.chart)
+          : incoming.content ? htmlToEntries(incoming.content)
+          : []
         return {
           chart: incoming.chart ?? [],
-          content:
-            hasContent ? incoming.content : chartToBibliographyHtml(incoming.chart),
+          content: incoming.content ?? '',
+          entries,
         }
       })(),
       teacherThesis:
         protocol.sections.teacherThesis ?? defaults.teacherThesis,
     },
+  }
+}
+
+// The new-protocol flow lives at /protocols/new/<typeSlug>/<section> while the
+// edit flow lives at /protocols/<id>/<section>. Picking the right segment for
+// the active section requires knowing which pattern we're on.
+const parseSectionFromPathname = (pathname: string | null): string => {
+  if (!pathname) return '0'
+  const segments = pathname.split('/')
+  return (segments[2] === 'new' ? segments[4] : segments[3]) ?? '0'
+}
+
+// Hydrate initial form values. For the /protocols/new/<type> flow we want to
+// reuse the in-progress draft only when it matches the type the user just
+// picked on the cards page — otherwise we'd swap the user into the wrong
+// section list (e.g. show presupuesto for a TT draft cached from a previous
+// STANDARD attempt). Outside the new flow, always use the protocol prop.
+const loadInitialValues = (pathname: string | null, protocol: any) => {
+  if (typeof window === 'undefined') return protocol
+  if (pathname?.split('/')[2] !== 'new') return protocol
+  const cached = localStorage.getItem('temp-protocol')
+  if (!cached) return protocol
+  try {
+    const parsed = JSON.parse(cached)
+    if (parsed?.protocolType !== protocol?.protocolType) {
+      localStorage.removeItem('temp-protocol')
+      return protocol
+    }
+    // Defensive: discard drafts that are missing the type-specific structure
+    // the current form expects. Happens when the schema has been refactored
+    // between sessions (e.g. a TT draft saved before sections.teacherThesis
+    // existed would otherwise crash the TT identification form).
+    if (
+      parsed?.protocolType === 'TEACHER_THESIS' &&
+      !parsed?.sections?.teacherThesis
+    ) {
+      localStorage.removeItem('temp-protocol')
+      return protocol
+    }
+    return parsed
+  } catch {
+    localStorage.removeItem('temp-protocol')
+    return protocol
   }
 }
 
@@ -275,7 +338,7 @@ export default function ProtocolForm({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [section, setSection] = useState(pathname?.split('/')[3] || '0')
+  const [section, setSection] = useState(parseSectionFromPathname(pathname))
 
   const [isPending, startTransition] = useTransition()
 
@@ -284,14 +347,7 @@ export default function ProtocolForm({
   }, [])
 
   const form = useProtocol({
-    initialValues:
-      (
-        pathname?.split('/')[2] === 'new' &&
-        typeof window !== 'undefined' &&
-        localStorage.getItem('temp-protocol')
-      ) ?
-        JSON.parse(localStorage.getItem('temp-protocol')!)
-        : protocol,
+    initialValues: loadInitialValues(pathname, protocol),
     validate: zodResolver(ProtocolSchema),
     validateInputOnBlur: true,
   })
@@ -308,15 +364,9 @@ export default function ProtocolForm({
     }
   }, [sections, section])
 
-  useEffect(() => {
-    const validKeys = sections.map((s) => s.key)
-    if (
-      pathname &&
-      !validKeys.includes(pathname?.split('/')[3])
-    ) {
-      router.push('/protocols/' + pathname?.split('/')[2] + '/0')
-    }
-  }, [pathname, router, sections])
+  // Route pages handle the initial invalid-section URL via their own validation.
+  // No URL-sync here so the new-protocol URL shape /protocols/new/<type>/<section>
+  // isn't pushed back to /protocols/new/0 (which is the cards page).
 
   const upsertProtocol = useCallback(
     async (protocol: z.infer<typeof ProtocolSchema>) => {

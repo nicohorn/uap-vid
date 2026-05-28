@@ -14,6 +14,14 @@ export const getCvMetadata = async (userId: string) =>
     },
   })
 
+export const userHasCv = async (userId: string): Promise<boolean> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { cvFileKey: true },
+  })
+  return Boolean(user?.cvFileKey)
+}
+
 export const clearCv = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },

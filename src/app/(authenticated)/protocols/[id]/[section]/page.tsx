@@ -1,36 +1,22 @@
 import ProtocolForm from '@protocol/protocol-form-template'
-import { initialSectionValues } from '@utils/createContext'
 import { canExecute } from '@utils/scopes'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
 import { findProtocolById } from 'repositories/protocol'
-import { Action, ProtocolState } from '@prisma/client'
+import { Action } from '@prisma/client'
 
 export default async function Page({
   params,
 }: {
   params: Promise<{ id: string; section: string }>
 }) {
-  const { id, section } = await params
+  const { id } = await params
   const session = await getServerSession(authOptions)
   if (!session) return
 
-  if (id === 'new') {
-    if (session.user.role !== 'SCIENTIST')
-      return (
-        <ProtocolForm
-          protocol={{
-            state: ProtocolState.DRAFT,
-            researcherId: session.user.id,
-            protocolType: 'STANDARD',
-            protocolSubtype: null,
-            sections: initialSectionValues,
-          }}
-        />
-      )
-  }
-
+  // New-protocol creation lives at /protocols/new/<type>/<section>; this route
+  // only handles editing existing protocols.
   const protocol = await findProtocolById(id)
   if (!protocol) redirect('/protocols')
 

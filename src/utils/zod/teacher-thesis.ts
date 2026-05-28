@@ -135,29 +135,10 @@ export const TeacherThesisPublicationSchema = z.object({
   publicationPlan: richTextRequired(),
 })
 
-export const TeacherThesisIndicatorsSchema = z.object({
-  publications: required(),
-  rdProjects: required(),
-  workSupervision: required(),
-  scientificManagement: required(),
-  internationalCommittees: required(),
-  editorialCommittees: required(),
-  awards: required(),
-})
-
-export const TeacherThesisEducationEntrySchema = z.object({
-  degree: required(),
-  institution: required(),
-  date: required(),
-})
-
-export const TeacherThesisDirectorCvSchema = z.object({
-  name: required(),
-  education: TeacherThesisEducationEntrySchema.array().min(1, {
-    message: 'Debe agregar al menos un título',
-  }),
-  indicators: TeacherThesisIndicatorsSchema,
-})
+// Director CV intentionally omitted: each user uploads their own PDF CV via
+// /profile (CV upload flow), so the per-protocol director-CV section was
+// removed. Legacy Prisma composite types (ProtocolSectionsTeacherThesisDirectorCv,
+// EducationEntry, Indicators) are kept in the schema as inert legacy.
 
 export const TeacherThesisSchema = z.object({
   identification: TeacherThesisIdentificationSchema,
@@ -166,9 +147,6 @@ export const TeacherThesisSchema = z.object({
   introduction: TeacherThesisIntroductionSchema,
   method: TeacherThesisMethodSchema,
   publication: TeacherThesisPublicationSchema,
-  directorsCv: TeacherThesisDirectorCvSchema.array().min(1, {
-    message: 'Debe cargar el CV del director (y codirectores si los hay)',
-  }),
 })
 
 export type TeacherThesis = z.infer<typeof TeacherThesisSchema>

@@ -38,15 +38,8 @@ export default async function Layout({
   const { id } = await params
   const session = await getServerSession(authOptions)
   if (!session) return
-  if (id === 'new') {
-    if (session.user.role === 'SCIENTIST') redirect('/protocols')
-    return (
-      <>
-        <Heading>Nuevo protocolo</Heading>
-        {children}
-      </>
-    )
-  }
+  // New-protocol creation lives at /protocols/new/... with its own layout;
+  // this layout only wraps the edit/view flow for existing protocols.
   const protocol = await getProtocolMetadata(id)
   if (!protocol) redirect('/protocols')
 

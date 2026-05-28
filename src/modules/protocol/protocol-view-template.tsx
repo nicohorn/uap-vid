@@ -12,7 +12,6 @@ import TtDescriptionView from './view-sections/teacher-thesis/description-view'
 import TtIntroductionView from './view-sections/teacher-thesis/introduction-view'
 import TtMethodView from './view-sections/teacher-thesis/method-view'
 import TtPublicationView from './view-sections/teacher-thesis/publication-view'
-import TtDirectorsCvView from './view-sections/teacher-thesis/directors-cv-view'
 
 export default async function View({
   sections,
@@ -34,7 +33,6 @@ export default async function View({
         <TtMethodView data={sections.teacherThesis.method} />
         <TtPublicationView data={sections.teacherThesis.publication} />
         <BibliographyView data={sections.bibliography} />
-        <TtDirectorsCvView data={sections.teacherThesis.directorsCv} />
       </>
     )
   }

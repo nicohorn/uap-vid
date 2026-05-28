@@ -434,7 +434,8 @@ type ProtocolSectionsTeacherThesisIndicators {
 
 type ProtocolSectionsBibliography {
   chart   ProtocolSectionsBibliographyChart[]
-  content String                              @default("")
+  content String                              @default("") /// @deprecated use `entries`
+  entries ProtocolSectionsBibliographyEntry[]
 }
 
 type ProtocolSectionsBibliographyChart {
@@ -442,6 +443,11 @@ type ProtocolSectionsBibliographyChart {
   title  String
   year   Int
   url    String?
+}
+
+type ProtocolSectionsBibliographyEntry {
+  content String
+  link    String?
 }
 
 type ProtocolSectionsBudget {
