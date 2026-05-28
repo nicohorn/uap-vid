@@ -12,6 +12,18 @@ export const PROTOCOL_TYPES = dict<ProtocolType>([
   { code: 'TEACHER_THESIS', label: 'Tesis docente' },
 ])
 
+const TYPE_SLUGS: Record<ProtocolType, string> = {
+  STANDARD: 'standard',
+  TEACHER_THESIS: 'teacher-thesis',
+}
+
+export const typeToSlug = (type: ProtocolType): string => TYPE_SLUGS[type]
+
+export const slugToType = (slug: string): ProtocolType | null => {
+  const entry = Object.entries(TYPE_SLUGS).find(([, s]) => s === slug)
+  return (entry?.[0] as ProtocolType) ?? null
+}
+
 // TODO(VID): confirm full subtype list. Current set inferred from existing
 // modality strings (PIC/PRI/PTP) plus Viviana's docx comment mentioning PIB.
 export type ProtocolSubtype = 'PIB' | 'PIC' | 'PRI' | 'PTP'

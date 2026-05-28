@@ -30,13 +30,27 @@ export const ProtocolSubtypeSchema = z.enum(protocolSubtypeKeys)
 // BIBLIOGRAPHY SECTION
 /////////////////////////////////////////
 
-export const BibliographySchema = z.object({
-  content: z
+export const BibliographyEntrySchema = z.object({
+  content: z.string().min(1, { message: 'La cita no puede estar vacía' }),
+  link: z
     .string()
-    .min(1, { message: 'La bibliografía no puede estar vacía' })
-    .refine((html) => html.replace(/<[^>]*>/g, '').trim().length > 0, {
-      message: 'La bibliografía no puede estar vacía',
-    }),
+    .nullable()
+    .optional()
+    .default('')
+    .refine(
+      (v) => !v || /^https?:\/\//i.test(v.trim()),
+      { message: 'El enlace debe comenzar con http:// o https://' }
+    ),
+})
+
+export const BibliographySchema = z.object({
+  entries: BibliographyEntrySchema.array().min(1, {
+    message: 'Debe agregar al menos una entrada bibliográfica',
+  }),
+  // Legacy fields kept for backward compatibility with existing data — not
+  // bound by the form anymore. The view falls back to these when `entries`
+  // is empty (e.g. for protocols saved before this change).
+  content: z.string().optional().default(''),
   chart: z
     .lazy(() =>
       z.object({

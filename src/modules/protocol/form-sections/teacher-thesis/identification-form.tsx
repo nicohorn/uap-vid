@@ -6,8 +6,6 @@ import { Text } from '@components/text'
 import { useProtocolContext } from '@utils/createContext'
 import {
   POSTGRADUATE_PROGRAMS,
-  PROTOCOL_SUBTYPES,
-  PROTOCOL_TYPES,
   SPONSORING_FACULTIES,
 } from '@utils/protocol-types'
 import { FormInput } from '@shared/form/form-input'
@@ -35,19 +33,9 @@ export function TtIdentificationForm() {
       <Fieldset>
         <Legend>Identificación del proyecto</Legend>
         <FieldGroup className="grid gap-3 sm:grid-cols-2">
-          <FormListbox
-            label="Tipo de protocolo"
-            description="Determina la estructura del formulario y el flujo de aprobación."
-            options={dictToOptions(PROTOCOL_TYPES)}
-            {...form.getInputProps('protocolType')}
-          />
-          <FormListbox
-            label="Subtipo"
-            options={dictToOptions(PROTOCOL_SUBTYPES)}
-            {...form.getInputProps('protocolSubtype')}
-          />
           <FormInput
             label="Título del proyecto"
+            className="sm:col-span-2"
             {...form.getInputProps('sections.identification.title')}
           />
           <FormInput

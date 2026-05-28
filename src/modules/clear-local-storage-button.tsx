@@ -15,8 +15,9 @@ export function ClearLocalStorageButton() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
-  // Only show this component on /protocols/new/0
-  if (pathname !== '/protocols/new/0') {
+  // Only show this component while creating a new protocol
+  // (/protocols/new/<typeSlug>/<section>).
+  if (!pathname?.startsWith('/protocols/new/')) {
     return null
   }
 
