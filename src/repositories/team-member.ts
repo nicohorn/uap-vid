@@ -124,7 +124,20 @@ export const getTeamMembers = async ({
   ])
 }
 
-export const getAllTeamMembers = async () => await prisma.teamMember.findMany()
+export const getAllTeamMembers = async () =>
+  await prisma.teamMember.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          cvFileKey: true,
+          cvFileName: true,
+          cvFileSize: true,
+          cvUploadedAt: true,
+        },
+      },
+    },
+  })
 
 export const deactivateTeamMember = async (
   protocolId: string,

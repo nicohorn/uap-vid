@@ -1044,6 +1044,72 @@ const getProtocolsByRole = cache(
   }
 )
 
+/**
+ * Server-side strict check that every team member on a STANDARD protocol has
+ * a justification AND a CV available — either inline on the team entry
+ * (external members) or on the linked UAP user's account (User.cvFileKey).
+ * Returns the first per-member error so the UI can surface a meaningful
+ * publish-block message. An empty array means the team passes.
+ */
+const validateTeamForPublish = async (
+  protocol: Pick<Protocol, 'sections'>
+): Promise<{ index: number; memberLabel: string; message: string }[]> => {
+  const errors: { index: number; memberLabel: string; message: string }[] = []
+  const team = protocol.sections?.identification?.team ?? []
+  if (team.length === 0) return errors
+
+  const teamMemberIds = team
+    .map((t: any) => t.teamMemberId)
+    .filter((id: string | null | undefined): id is string => Boolean(id))
+
+  const linkedMembers =
+    teamMemberIds.length > 0 ?
+      await prisma.teamMember.findMany({
+        where: { id: { in: teamMemberIds } },
+        select: {
+          id: true,
+          name: true,
+          user: { select: { cvFileKey: true } },
+        },
+      })
+    : []
+  const linkedMap = new Map(linkedMembers.map((m) => [m.id, m]))
+
+  team.forEach((member: any, index: number) => {
+    const labelFromLink = member.teamMemberId
+      ? linkedMap.get(member.teamMemberId)?.name
+      : null
+    const memberLabel =
+      labelFromLink ||
+      (member.name || '').trim() ||
+      `Integrante #${index + 1}`
+
+    const justification = (member.justification || '').trim()
+    if (!justification) {
+      errors.push({
+        index,
+        memberLabel,
+        message: `Falta la justificación de ${memberLabel}`,
+      })
+    }
+
+    const inlineCv = Boolean(member.cvFileKey)
+    const linkedCv =
+      member.teamMemberId ?
+        Boolean(linkedMap.get(member.teamMemberId)?.user?.cvFileKey)
+      : false
+    if (!inlineCv && !linkedCv) {
+      errors.push({
+        index,
+        memberLabel,
+        message: `Falta el CV de ${memberLabel}`,
+      })
+    }
+  })
+
+  return errors
+}
+
 export {
   findProtocolByIdWithResearcher,
   findProtocolById,
@@ -1062,4 +1128,5 @@ export {
   updateProtocolConvocatory,
   findProtocolByIdWithBudgets,
   getProtocolBudgetData,
+  validateTeamForPublish,
 }

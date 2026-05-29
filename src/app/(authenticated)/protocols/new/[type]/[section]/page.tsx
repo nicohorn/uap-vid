@@ -1,5 +1,4 @@
 import ProtocolForm from '@protocol/protocol-form-template'
-import { userHasCv } from '@repositories/cv'
 import { initialSectionValues } from '@utils/createContext'
 import {
   PROTOCOL_SUBTYPES,
@@ -21,10 +20,6 @@ export default async function NewProtocolFormPage({
   const session = await getServerSession(authOptions)
   if (!session) return null
   if (session.user.role === 'SCIENTIST') redirect('/protocols')
-
-  // Block direct URLs from bypassing the CV requirement; the parent page
-  // (/protocols/new) shows a friendlier explanation.
-  if (!(await userHasCv(session.user.id))) redirect('/protocols/new')
 
   const { type: typeSlug, section } = await params
   const { subtype } = await searchParams

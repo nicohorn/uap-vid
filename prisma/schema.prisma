@@ -514,6 +514,15 @@ type ProtocolSectionsIdentificationTeam {
   toBeConfirmed         Boolean?         @default(false)
   categoryToBeConfirmed String?          @db.ObjectId
   assignments           TeamAssignment[]
+  // Why each member is on this project (free text per docx requirement).
+  justification         String?
+  // Inline CV file fields — used when the team member is external (no
+  // linked UAP user). For UAP-linked members the CV lives on the User
+  // record (User.cvFileKey) and is shared across protocols.
+  cvFileKey             String?
+  cvFileName            String?
+  cvFileSize            Int?
+  cvUploadedAt          DateTime?        @db.Date
 }
 
 type TeamAssignment {
