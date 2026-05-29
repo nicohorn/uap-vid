@@ -75,6 +75,13 @@ export const IdentificationTeamSchema = z.object({
   toBeConfirmed: z.boolean().default(false).nullable(),
   categoryToBeConfirmed: z.string().nullable(),
   assignments: z.array(TeamAssignmentSchema),
+  justification: z.string().nullable().optional().default(''),
+  // Inline CV (for external members). UAP-linked members carry their CV on the
+  // User record instead; the form falls back to that when these are empty.
+  cvFileKey: z.string().nullable().optional().default(null),
+  cvFileName: z.string().nullable().optional().default(null),
+  cvFileSize: z.number().int().nullable().optional().default(null),
+  cvUploadedAt: z.coerce.date().nullable().optional().default(null),
 })
 
 export const ConfirmTeamSchema = z.object({

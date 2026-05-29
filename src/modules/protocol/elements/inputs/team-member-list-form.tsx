@@ -22,10 +22,12 @@ import {
 } from '@components/dialog'
 import { FormListbox } from '@shared/form/form-listbox'
 import { FormInput } from '@shared/form/form-input'
+import { FormTextarea } from '@shared/form/form-textarea'
 import { FormCombobox } from '@shared/form/form-combobox'
 import Info from '@shared/info'
+import { TeamMemberCvCell } from './team-member-cv-cell'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCategoriesForForm } from '@repositories/team-member-category'
 import { FormSwitch } from '@shared/form/form-switch'
 import { notifications } from '@elements/notifications'
@@ -55,6 +57,7 @@ export default function TeamMemberListForm() {
     memberName: '',
   })
 
+  const queryClient = useQueryClient()
   const { data: teamMembers } = useQuery({
     queryKey: ['teamMembers'],
     queryFn: async () => await getAllTeamMembers(),
@@ -257,10 +260,10 @@ export default function TeamMemberListForm() {
   return (
     <Fieldset>
       <Legend>Equipo de investigación</Legend>
-      <div className="mt-2 grid grid-cols-[repeat(21,minmax(0,1fr))] gap-1">
-        <Field className="col-span-4">
+      <div className="mt-2 grid grid-cols-[repeat(24,minmax(0,1fr))] gap-1">
+        <Field className="col-span-3">
           <Info content="Puede especificar que va a haber una persona con un rol específico trabajando en el proyecto de investigación. Si el presupuesto es aprobado, debe confirmar el nombre de esta persona antes de comenzar con el proyecto de investigación.">
-            <Label>Miembro por definir</Label>
+            <Label>A definir</Label>
           </Info>
         </Field>
         <Field className="col-span-3">
@@ -270,12 +273,17 @@ export default function TeamMemberListForm() {
           <Label>Nombre y apellido</Label>
         </Field>
         <Field className="col-span-2">
-          <Label>Horas semanales</Label>
+          <Label>Horas sem.</Label>
         </Field>
         <Field className="col-span-2">
           <Label>Meses</Label>
         </Field>
-        <span />
+        <Field className="col-span-3">
+          <Info content="Cargá un PDF resumido (máximo 3 páginas). Para miembros de UAP el CV se guarda en su cuenta; para colaboradores externos queda asociado al protocolo.">
+            <Label>CV (PDF)</Label>
+          </Info>
+        </Field>
+        <span className="col-span-3" />
         {form
           .getValues()
           .sections.identification!.team.map((_: any, index: number) => {
@@ -285,10 +293,29 @@ export default function TeamMemberListForm() {
                 'opacity-50 line-through decoration-red-500 decoration-2 pointer-events-none relative'
               : ''
 
+            const teamEntry =
+              form.getValues().sections.identification!.team[index] ?? {}
+            const linkedMember =
+              teamEntry.teamMemberId ?
+                teamMembers?.find((m) => m.id === teamEntry.teamMemberId)
+              : null
+            const linkedUser: {
+              userId: string
+              cvFileKey: string | null
+              cvFileName?: string | null
+            } | null =
+              linkedMember?.user ?
+                {
+                  userId: linkedMember.user.id,
+                  cvFileKey: linkedMember.user.cvFileKey ?? null,
+                  cvFileName: linkedMember.user.cvFileName ?? null,
+                }
+              : null
+
             return (
               <Fragment key={index}>
                 <div
-                  className={`col-span-4 flex items-center justify-center ${rowClasses}`}
+                  className={`col-span-3 flex items-center justify-center ${rowClasses}`}
                 >
                   <FormSwitch
                     checked={
@@ -317,7 +344,7 @@ export default function TeamMemberListForm() {
                   ).value
                 ) ?
                   <FormListbox
-                    className={`col-span-4 ${rowClasses}`}
+                    className={`col-span-3 ${rowClasses}`}
                     label=""
                     placeholder={
                       form.getInputProps(
@@ -430,37 +457,87 @@ export default function TeamMemberListForm() {
                     `sections.identification.team.${index}.workingMonths`
                   )}
                 />
-                {index === 0 ?
-                  <span />
-                : <div className="mt-1 flex gap-1 self-start">
-                    {isDeactivated ?
-                      <Button plain title="Reactivar miembro">
-                        <UserPlus
+                <div className={`col-span-3 self-center ${rowClasses}`}>
+                  <TeamMemberCvCell
+                    linkedUser={linkedUser}
+                    inlineCvFileKey={teamEntry.cvFileKey ?? null}
+                    inlineCvFileName={teamEntry.cvFileName ?? null}
+                    disabled={isDeactivated}
+                    onUpload={(meta) => {
+                      if (linkedUser) {
+                        // Persisted on the User account; nothing to write on the
+                        // team entry. Invalidate the teamMembers query so the
+                        // "CV cargado" indicator picks up on the next render.
+                        queryClient.invalidateQueries({
+                          queryKey: ['teamMembers'],
+                        })
+                      } else {
+                        // External member: store inline on the team entry so it
+                        // travels with the protocol.
+                        form.setFieldValue(
+                          `sections.identification.team.${index}.cvFileKey`,
+                          meta.cvFileKey
+                        )
+                        form.setFieldValue(
+                          `sections.identification.team.${index}.cvFileName`,
+                          meta.cvFileName
+                        )
+                        form.setFieldValue(
+                          `sections.identification.team.${index}.cvFileSize`,
+                          meta.cvFileSize
+                        )
+                        form.setFieldValue(
+                          `sections.identification.team.${index}.cvUploadedAt`,
+                          meta.cvUploadedAt
+                        )
+                      }
+                    }}
+                  />
+                </div>
+                <div className="col-span-3 flex items-center justify-end gap-1">
+                  {index === 0 ?
+                    null
+                  : <>
+                      {isDeactivated ?
+                        <Button plain title="Reactivar miembro">
+                          <UserPlus
+                            data-slot="icon"
+                            onClick={() => showReactivateDialog(index)}
+                            className="text-green-600 hover:text-green-700"
+                          />
+                        </Button>
+                      : <Button plain title="Desactivar miembro">
+                          <UserMinus
+                            data-slot="icon"
+                            onClick={() => showDeactivateDialog(index)}
+                          />
+                        </Button>
+                      }
+                      <Button plain>
+                        <Trash
                           data-slot="icon"
-                          onClick={() => showReactivateDialog(index)}
-                          className="text-green-600 hover:text-green-700"
+                          onClick={() =>
+                            form.removeListItem(
+                              'sections.identification.team',
+                              index
+                            )
+                          }
                         />
                       </Button>
-                    : <Button plain title="Desactivar miembro">
-                        <UserMinus
-                          data-slot="icon"
-                          onClick={() => showDeactivateDialog(index)}
-                        />
-                      </Button>
-                    }
-                    <Button plain>
-                      <Trash
-                        data-slot="icon"
-                        onClick={() =>
-                          form.removeListItem(
-                            'sections.identification.team',
-                            index
-                          )
-                        }
-                      />
-                    </Button>
-                  </div>
-                }
+                    </>
+                  }
+                </div>
+                <div className={`[grid-column:1/-1] ${rowClasses}`}>
+                  <FormTextarea
+                    label="Justificación de la participación"
+                    description="Describí brevemente por qué este integrante forma parte del equipo."
+                    rows={2}
+                    disabled={isDeactivated}
+                    {...form.getInputProps(
+                      `sections.identification.team.${index}.justification`
+                    )}
+                  />
+                </div>
               </Fragment>
             )
           })}

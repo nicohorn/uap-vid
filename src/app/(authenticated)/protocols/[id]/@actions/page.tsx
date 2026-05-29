@@ -1,6 +1,9 @@
 import { Action, ReviewVerdict, Prisma } from '@prisma/client'
 import { ActionsDropdown } from '@protocol/elements/actions-dropdown'
-import { findProtocolByIdWithResearcher } from '@repositories/protocol'
+import {
+  findProtocolByIdWithResearcher,
+  validateTeamForPublish,
+} from '@repositories/protocol'
 import { getReviewsByProtocol } from '@repositories/review'
 import { getActionsByRoleAndState, canExecute } from '@utils/scopes'
 import { ProtocolSchema } from '@utils/zod'
@@ -78,11 +81,25 @@ export default async function ActionsPage({
     protocol.protocolType === 'TEACHER_THESIS'
       ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
       : ProtocolSchema.safeParse(protocol)
-  checkResults.publish.isValid = validToPublish.success
+  // Standard protocols also need every team member to have a justification
+  // and a CV (inline or via their linked UAP user) before they can be
+  // published. TT uses a different team shape, so this gate doesn't apply
+  // there for now.
+  const teamErrors =
+    protocol.protocolType !== 'TEACHER_THESIS'
+      ? await validateTeamForPublish(protocol)
+      : []
+  const sectionsValid = validToPublish.success && teamErrors.length === 0
+  checkResults.publish.isValid = sectionsValid
   checkResults.publish.hasConvocatory = !!protocol.convocatoryId
   if (!validToPublish.success) {
     checkResults.publish.message =
       'El protocolo no está completo. Debe completar todas las secciones y los campos requeridos.'
+  } else if (teamErrors.length > 0) {
+    checkResults.publish.message =
+      teamErrors.length === 1
+        ? teamErrors[0].message
+        : `Faltan datos del equipo: ${teamErrors[0].message} (y ${teamErrors.length - 1} más).`
   } else if (!protocol.convocatoryId) {
     checkResults.publish.message =
       'El protocolo no tiene una convocatoria asignada.'

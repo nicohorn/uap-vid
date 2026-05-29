@@ -46,9 +46,10 @@ export const POST = async (
   if (!session) return new NextResponse('Unauthorized', { status: 401 })
 
   const { userId } = await params
-  const isSelf = session.user.id === userId
-  const isAdmin = session.user.role === 'ADMIN'
-  if (!isSelf && !isAdmin) {
+  // Any non-SCIENTIST authenticated user can upload a CV for another UAP user
+  // via the protocol team form (the creator typically uploads CVs on behalf of
+  // each team member who hasn't done it from their own /profile yet).
+  if (session.user.role === 'SCIENTIST' && session.user.id !== userId) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 

@@ -374,7 +374,7 @@ export default function ProtocolForm({
 
       if (!id) {
         const completeProtocol = sanitizeProtocolData(
-          restOfProtocol as Protocol
+          restOfProtocol as unknown as Protocol
         )
 
         try {
@@ -409,7 +409,7 @@ export default function ProtocolForm({
         }
       }
 
-      const updated = await updateProtocolById(id, restOfProtocol as Protocol)
+      const updated = await updateProtocolById(id, restOfProtocol as unknown as Protocol)
 
       if (updated) {
         notifications.show({
