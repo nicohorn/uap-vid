@@ -33,10 +33,21 @@ export function CvUploadForm({ userId, initial }: Props) {
   const hasCv = Boolean(initial.cvFileName)
 
   const upload = async (file: File) => {
-    if (file.type !== CV_MIME) {
+    // Frontend pre-checks for fast feedback. The server re-validates and is
+    // tolerant of missing MIME (some browsers/OSes don't set file.type for
+    // PDFs), so we only block here on cases we're sure about.
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
       notifications.show({
         title: 'Formato inválido',
-        message: 'El archivo debe ser PDF',
+        message: 'El archivo debe ser un PDF (.pdf).',
+        intent: 'error',
+      })
+      return
+    }
+    if (file.type && file.type !== CV_MIME) {
+      notifications.show({
+        title: 'Formato inválido',
+        message: `El archivo debe ser PDF. Tipo detectado: ${file.type}.`,
         intent: 'error',
       })
       return
@@ -44,7 +55,7 @@ export function CvUploadForm({ userId, initial }: Props) {
     if (file.size > CV_MAX_BYTES) {
       notifications.show({
         title: 'Archivo demasiado grande',
-        message: `El CV no puede superar ${formatBytes(CV_MAX_BYTES)}`,
+        message: `El CV no puede superar ${formatBytes(CV_MAX_BYTES)} (tu archivo: ${formatBytes(file.size)}).`,
         intent: 'error',
       })
       return
@@ -54,22 +65,32 @@ export function CvUploadForm({ userId, initial }: Props) {
     try {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch(`/api/files/cv/${userId}`, {
-        method: 'POST',
-        body: form,
-      })
+      let res: Response
+      try {
+        res = await fetch(`/api/files/cv/${userId}`, {
+          method: 'POST',
+          body: form,
+        })
+      } catch (error) {
+        notifications.show({
+          title: 'Error de red',
+          message: `No se pudo conectar al servidor: ${(error as Error).message}`,
+          intent: 'error',
+        })
+        return
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         notifications.show({
-          title: 'Error al subir',
-          message: data?.error || 'No se pudo subir el CV',
+          title: `Error al subir (${res.status})`,
+          message: data?.error || `El servidor rechazó el archivo (HTTP ${res.status}).`,
           intent: 'error',
         })
         return
       }
       notifications.show({
         title: 'CV cargado',
-        message: 'Tu CV se actualizó con éxito',
+        message: 'Tu CV se actualizó con éxito.',
         intent: 'success',
       })
       startTransition(() => router.refresh())

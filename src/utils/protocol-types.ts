@@ -8,7 +8,7 @@ const dict = <Code extends string>(entries: { code: Code; label: string; descrip
 
 export type ProtocolType = 'STANDARD' | 'TEACHER_THESIS'
 export const PROTOCOL_TYPES = dict<ProtocolType>([
-  { code: 'STANDARD', label: 'Estándar' },
+  { code: 'STANDARD', label: 'Proyecto Regular de Investigación' },
   { code: 'TEACHER_THESIS', label: 'Tesis docente' },
 ])
 

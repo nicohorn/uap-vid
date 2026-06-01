@@ -5,8 +5,7 @@ import { randomUUID } from 'crypto'
 import { prisma } from '@utils/bd'
 import { getFile, putFile, deleteFile } from '@utils/storage'
 import { CV_MAX_BYTES, CV_MIME } from '@utils/zod/cv'
-
-const PDF_MAGIC = Buffer.from('%PDF')
+import { sanitizeCvFilename, sniffPdf } from '@utils/cv-validation'
 
 export const GET = async (
   _req: Request,
@@ -46,9 +45,6 @@ export const POST = async (
   if (!session) return new NextResponse('Unauthorized', { status: 401 })
 
   const { userId } = await params
-  // Any non-SCIENTIST authenticated user can upload a CV for another UAP user
-  // via the protocol team form (the creator typically uploads CVs on behalf of
-  // each team member who hasn't done it from their own /profile yet).
   if (session.user.role === 'SCIENTIST' && session.user.id !== userId) {
     return new NextResponse('Forbidden', { status: 403 })
   }
@@ -56,7 +52,7 @@ export const POST = async (
   const contentLength = Number(req.headers.get('content-length') || 0)
   if (contentLength > CV_MAX_BYTES * 1.1) {
     return NextResponse.json(
-      { error: 'El archivo supera el tamaño máximo de 10 MB' },
+      { error: 'El archivo supera el tamaño máximo de 10 MB.' },
       { status: 413 }
     )
   }
@@ -65,35 +61,50 @@ export const POST = async (
   try {
     formData = await req.formData()
   } catch {
-    return NextResponse.json({ error: 'Cuerpo inválido' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'No se pudo leer el archivo enviado. Volvé a intentar.' },
+      { status: 400 }
+    )
   }
 
   const file = formData.get('file')
   if (!(file instanceof File)) {
     return NextResponse.json(
-      { error: 'Falta el archivo (campo "file")' },
+      { error: 'No se recibió ningún archivo.' },
       { status: 400 }
     )
   }
 
   if (file.type && file.type !== CV_MIME) {
     return NextResponse.json(
-      { error: 'El archivo debe ser PDF' },
+      {
+        error: `El archivo debe ser PDF (tipo recibido: ${file.type}).`,
+      },
       { status: 415 }
     )
   }
 
   if (file.size > CV_MAX_BYTES) {
     return NextResponse.json(
-      { error: 'El archivo supera el tamaño máximo de 10 MB' },
+      {
+        error: `El archivo supera el tamaño máximo de 10 MB (tamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB).`,
+      },
       { status: 413 }
     )
   }
 
+  const safeName = sanitizeCvFilename(file.name)
+  if (!safeName.ok) {
+    return NextResponse.json({ error: safeName.error }, { status: 400 })
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer())
-  if (!buffer.subarray(0, 4).equals(PDF_MAGIC)) {
+  if (!sniffPdf(buffer)) {
     return NextResponse.json(
-      { error: 'El archivo no es un PDF válido' },
+      {
+        error:
+          'El archivo no parece un PDF válido (no se encontró la firma %PDF en los primeros 1024 bytes).',
+      },
       { status: 415 }
     )
   }
@@ -102,33 +113,58 @@ export const POST = async (
     where: { id: userId },
     select: { cvFileKey: true },
   })
-  if (!user) return new NextResponse('Not Found', { status: 404 })
+  if (!user) {
+    return NextResponse.json(
+      { error: 'El usuario no existe.' },
+      { status: 404 }
+    )
+  }
 
   const newKey = `cv/${userId}/${randomUUID()}.pdf`
-  await putFile(newKey, buffer)
 
-  const original =
-    (file.name || 'cv.pdf').endsWith('.pdf') ?
-      file.name || 'cv.pdf'
-      : `${file.name || 'cv'}.pdf`
+  try {
+    await putFile(newKey, buffer)
+  } catch (error) {
+    console.error('CV upload failed (filesystem):', error)
+    return NextResponse.json(
+      {
+        error:
+          'Error al guardar el archivo en el servidor. Avisá al administrador del sistema.',
+      },
+      { status: 500 }
+    )
+  }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      cvFileKey: newKey,
-      cvFileName: original,
-      cvFileSize: buffer.length,
-      cvUploadedAt: new Date(),
-    },
-  })
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        cvFileKey: newKey,
+        cvFileName: safeName.value,
+        cvFileSize: buffer.length,
+        cvUploadedAt: new Date(),
+      },
+    })
+  } catch (error) {
+    console.error('CV upload failed (db):', error)
+    // Roll back the file write to avoid orphans.
+    await deleteFile(newKey).catch(() => {})
+    return NextResponse.json(
+      {
+        error:
+          'Error al actualizar el perfil del usuario. Intentá nuevamente.',
+      },
+      { status: 500 }
+    )
+  }
 
   if (user.cvFileKey && user.cvFileKey !== newKey) {
-    await deleteFile(user.cvFileKey)
+    await deleteFile(user.cvFileKey).catch(() => {})
   }
 
   return NextResponse.json({
     ok: true,
-    cvFileName: original,
+    cvFileName: safeName.value,
     cvFileSize: buffer.length,
   })
 }

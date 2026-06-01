@@ -1,26 +1,54 @@
+'use client'
+
+import {
+  Alert,
+  AlertActions,
+  AlertDescription,
+  AlertTitle,
+} from '@components/alert'
+import { Button } from '@components/button'
 import { cx } from '@utils/cx'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { InfoCircle } from 'tabler-icons-react'
 
+// Click-to-open info dialog used throughout the protocol form. Previously a
+// CSS-hover popup with no viewport awareness — tall content (e.g. discipline
+// classifications) got cut off when triggered near the bottom of the form.
+// The Alert panel handles scrolling and centering for us.
 export default function InfoTooltip({
   children,
+  title = 'Información',
   className,
 }: {
   children: ReactNode
+  title?: string
   className?: string
 }) {
-  return (
-    <div className="group pointer-events-none relative flex h-0 justify-end">
-      <InfoCircle className="pointer-events-auto mt-2 h-4 w-4 cursor-help text-gray-600 transition delay-500 duration-300 hover:scale-110 hover:text-primary hover:delay-100" />
+  const [isOpen, setIsOpen] = useState(false)
 
-      <div
-        className={cx(
-          'prose prose-zinc prose-p:pl-2 inset-auto z-10 mr-6 min-w-[20vw] origin-top-right scale-95 rounded bg-white p-3 text-xs/6 opacity-0 shadow-md ring-1 ring-inset transition delay-300 duration-150 ease-in-out group-hover:scale-100 group-hover:opacity-100 group-hover:delay-100',
-          className ?? 'absolute'
-        )}
-      >
-        {children}
+  return (
+    <>
+      <div className={cx('flex h-0 justify-end', className)}>
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label="Mostrar información"
+          className="pointer-events-auto mt-2 transition-transform hover:scale-110"
+        >
+          <InfoCircle className="h-4 w-4 cursor-help text-gray-600 hover:text-primary" />
+        </button>
       </div>
-    </div>
+      <Alert open={isOpen} onClose={setIsOpen} size="2xl">
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>
+          <div className="prose prose-zinc max-w-none text-sm dark:prose-invert">
+            {children}
+          </div>
+        </AlertDescription>
+        <AlertActions>
+          <Button onClick={() => setIsOpen(false)}>Cerrar</Button>
+        </AlertActions>
+      </Alert>
+    </>
   )
 }

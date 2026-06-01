@@ -3,12 +3,9 @@
 import { Button } from '@components/button'
 import { Subheading } from '@components/heading'
 import { Text } from '@components/text'
-import { FormListbox } from '@shared/form/form-listbox'
 import { cx } from '@utils/cx'
 import {
-  PROTOCOL_SUBTYPES,
   PROTOCOL_TYPES,
-  type ProtocolSubtype,
   type ProtocolType,
   typeToSlug,
 } from '@utils/protocol-types'
@@ -28,23 +25,14 @@ const TYPE_ICONS: Record<ProtocolType, JSX.Element> = {
   TEACHER_THESIS: <School className="size-8 text-primary-700 dark:text-primary-300" />,
 }
 
-const subtypeOptions = Object.values(PROTOCOL_SUBTYPES).map((s) => ({
-  value: s.code,
-  label: s.label,
-  description: s.description,
-}))
-
 export function ProtocolTypeCards() {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<ProtocolType | null>(null)
-  const [selectedSubtype, setSelectedSubtype] = useState<ProtocolSubtype | ''>('')
   const [isPending, startTransition] = useTransition()
 
   const handleContinue = () => {
     if (!selectedType) return
-    const url = `/protocols/new/${typeToSlug(selectedType)}/0${
-      selectedSubtype ? `?subtype=${selectedSubtype}` : ''
-    }`
+    const url = `/protocols/new/${typeToSlug(selectedType)}/0`
     startTransition(() => router.push(url))
   }
 
@@ -79,16 +67,6 @@ export function ProtocolTypeCards() {
             </button>
           )
         })}
-      </div>
-
-      <div className="max-w-md">
-        <FormListbox
-          label="Subtipo (opcional)"
-          description="Categoriza el protocolo según la taxonomía de VID. Podés cambiarlo más adelante."
-          options={subtypeOptions}
-          value={selectedSubtype as any}
-          onChange={((v: ProtocolSubtype | '') => setSelectedSubtype(v)) as any}
-        />
       </div>
 
       <div className="flex justify-end">

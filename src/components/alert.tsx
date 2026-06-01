@@ -54,7 +54,10 @@ export function Alert({
                 className={clsx(
                   className,
                   sizes[size],
-                  'row-start-2 w-full rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-900 dark:ring-white/10 sm:rounded-2xl sm:p-6 forced-colors:outline'
+                  // max-h + overflow-y-auto so long content (e.g. info lists
+                  // with many entries) scrolls inside the panel instead of
+                  // overflowing the viewport with nothing the user can do.
+                  'row-start-2 flex max-h-[85vh] w-full flex-col overflow-y-auto rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-900 dark:ring-white/10 sm:rounded-2xl sm:p-6 forced-colors:outline'
                 )}
               >
                 {children}
