@@ -63,19 +63,20 @@ const TtIdentificationView = ({ data, title }: Props) => {
         </div>
       </DescriptionDetails>
 
-      <DescriptionTerm>
-        Especialistas elegibles para evaluadores
-      </DescriptionTerm>
-      <DescriptionDetails>
-        {data.eligibleEvaluators.length === 0 ?
-          <Text>—</Text>
-        : <ul className="ml-5 list-disc">
-            {data.eligibleEvaluators.map((e, i) => (
-              <li key={i}>{e}</li>
-            ))}
-          </ul>
-        }
-      </DescriptionDetails>
+      {data.eligibleEvaluators.length > 0 && (
+        <>
+          <DescriptionTerm>
+            Especialistas elegibles para evaluadores
+          </DescriptionTerm>
+          <DescriptionDetails>
+            <ul className="ml-5 list-disc">
+              {data.eligibleEvaluators.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          </DescriptionDetails>
+        </>
+      )}
     </SectionViewer>
   )
 }

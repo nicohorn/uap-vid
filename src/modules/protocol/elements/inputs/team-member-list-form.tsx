@@ -530,7 +530,7 @@ export default function TeamMemberListForm() {
                 <div className={`[grid-column:1/-1] ${rowClasses}`}>
                   <FormTextarea
                     label="Justificación de la participación"
-                    description="Describí brevemente por qué este integrante forma parte del equipo."
+                    description="Describe brevemente el rol de este integrante y por qué formará parte del equipo."
                     rows={2}
                     disabled={isDeactivated}
                     {...form.getInputProps(

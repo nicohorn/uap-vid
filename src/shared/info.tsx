@@ -13,11 +13,13 @@ export default function Info({
   title,
   content,
   className,
+  size = 'lg',
 }: {
   children: React.ReactNode
   title?: string
   content: string | React.ReactNode
   className?: string
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -29,7 +31,7 @@ export default function Info({
       >
         {children}
       </div>
-      <Alert open={isOpen} onClose={setIsOpen}>
+      <Alert open={isOpen} onClose={setIsOpen} size={size}>
         <AlertTitle>{title}</AlertTitle>
         <AlertDescription>{content}</AlertDescription>
         <AlertActions>

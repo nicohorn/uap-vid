@@ -21,8 +21,7 @@ const TtDescriptionView = ({ data }: Props) => (
     title="Descripción"
     description="Disciplina, línea y objetivos del proyecto"
   >
-    <ItemView title="Disciplina general" value={data.generalDiscipline} />
-    <ItemView title="Área específica del conocimiento" value={data.specificArea} />
+    <ItemView title="Área de investigación" value={data.generalDiscipline} />
     <ItemView title="Línea de investigación" value={data.researchLine} />
     <ItemView title="Resumen técnico" value={data.technicalAbstract} />
     <ItemView title="Palabras clave" value={data.keywords.join(', ')} />

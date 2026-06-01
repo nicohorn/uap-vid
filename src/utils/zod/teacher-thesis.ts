@@ -31,11 +31,11 @@ export const TeacherThesisIdentificationSchema = z.object({
   sponsoringFaculty: enumFromDict(SPONSORING_FACULTIES),
   thesisCandidate: TeacherThesisTeamMemberSchema,
   director: TeacherThesisTeamMemberSchema,
+  // additionalMembers and eligibleEvaluators are kept in the schema because
+  // legacy TT protocols may have them populated, but they're no longer
+  // collected from the form (TT doesn't go through evaluation).
   additionalMembers: TeacherThesisTeamMemberSchema.array().optional().default([]),
-  eligibleEvaluators: z
-    .string()
-    .array()
-    .min(1, { message: 'Debe indicar al menos un evaluador elegible' }),
+  eligibleEvaluators: z.string().array().optional().default([]),
 })
 
 export const TeacherThesisScheduleEntrySchema = z.object({
@@ -63,7 +63,10 @@ export const TeacherThesisDurationSchema = z.object({
 
 export const TeacherThesisDescriptionSchema = z.object({
   generalDiscipline: required(),
-  specificArea: required(),
+  // specificArea is kept on the Prisma composite for backward compatibility
+  // with existing TT protocols, but no longer required nor collected from the
+  // form (it doesn't map to the standard taxonomy).
+  specificArea: z.string().nullable().optional().default(''),
   researchLine: required(),
   technicalAbstract: z.string().refine(
     (s) => {

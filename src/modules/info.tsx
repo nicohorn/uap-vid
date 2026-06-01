@@ -12,10 +12,12 @@ export default function Info({
   children,
   title,
   content,
+  size = 'lg',
 }: {
   children: React.ReactNode
   title?: string
   content: string | React.ReactNode
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -24,7 +26,7 @@ export default function Info({
       <div className="cursor-help" onClick={() => setIsOpen(true)}>
         {children}
       </div>
-      <Alert open={isOpen} onClose={setIsOpen}>
+      <Alert open={isOpen} onClose={setIsOpen} size={size}>
         <AlertTitle>{title}</AlertTitle>
         <AlertDescription>{content}</AlertDescription>
         <AlertActions>

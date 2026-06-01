@@ -4,12 +4,13 @@ import { Button } from '@components/button'
 import { FieldGroup, Fieldset, Legend } from '@components/fieldset'
 import { Text } from '@components/text'
 import { useProtocolContext } from '@utils/createContext'
+import { DISCIPLINES, linesForDiscipline } from '@utils/disciplines'
 import {
   APPLICATION_FIELDS,
   RESEARCH_TYPES,
   SOCIOECONOMIC_OBJECTIVES,
 } from '@utils/protocol-types'
-import { FormInput } from '@shared/form/form-input'
+import { FormCombobox } from '@shared/form/form-combobox'
 import { FormListbox } from '@shared/form/form-listbox'
 import { FormTextarea } from '@shared/form/form-textarea'
 import { motion } from 'framer-motion'
@@ -40,20 +41,28 @@ export function TtDescriptionForm() {
       <Fieldset>
         <Legend>Descripción del proyecto</Legend>
         <FieldGroup>
-          <FormInput
-            label="Disciplina general"
-            description="Ver Anexo A"
-            {...form.getInputProps('sections.teacherThesis.description.generalDiscipline')}
+          <FormListbox
+            label="Área de investigación"
+            options={DISCIPLINES.map((d) => ({ value: d, label: d }))}
+            {...form.getInputProps(
+              'sections.teacherThesis.description.generalDiscipline'
+            )}
+            onBlur={() => {
+              form.setFieldValue(
+                'sections.teacherThesis.description.researchLine',
+                ''
+              )
+            }}
           />
-          <FormInput
-            label="Área específica del conocimiento"
-            description="Ver Anexo A"
-            {...form.getInputProps('sections.teacherThesis.description.specificArea')}
-          />
-          <FormInput
+          <FormCombobox
             label="Línea de investigación"
-            description="Ver Anexo A"
-            {...form.getInputProps('sections.teacherThesis.description.researchLine')}
+            options={linesForDiscipline(description.generalDiscipline).map(
+              (e) => ({ value: e, label: e })
+            )}
+            disabled={!description.generalDiscipline}
+            {...form.getInputProps(
+              'sections.teacherThesis.description.researchLine'
+            )}
           />
           <div>
             <FormTextarea

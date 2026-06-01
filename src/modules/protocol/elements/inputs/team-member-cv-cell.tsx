@@ -59,10 +59,20 @@ export function TeamMemberCvCell({
     : null
 
   const upload = async (file: File) => {
-    if (file.type !== CV_MIME) {
+    // Frontend pre-checks for fast feedback. Server re-validates and is
+    // tolerant of missing MIME, so don't block here on file.type alone.
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
       notifications.show({
         title: 'Formato inválido',
-        message: 'El archivo debe ser PDF',
+        message: 'El archivo debe ser un PDF (.pdf).',
+        intent: 'error',
+      })
+      return
+    }
+    if (file.type && file.type !== CV_MIME) {
+      notifications.show({
+        title: 'Formato inválido',
+        message: `El archivo debe ser PDF. Tipo detectado: ${file.type}.`,
         intent: 'error',
       })
       return
@@ -70,7 +80,7 @@ export function TeamMemberCvCell({
     if (file.size > CV_MAX_BYTES) {
       notifications.show({
         title: 'Archivo demasiado grande',
-        message: `El CV no puede superar ${formatBytes(CV_MAX_BYTES)}`,
+        message: `El CV no puede superar ${formatBytes(CV_MAX_BYTES)} (tu archivo: ${formatBytes(file.size)}).`,
         intent: 'error',
       })
       return
@@ -86,12 +96,22 @@ export function TeamMemberCvCell({
         linkedUser?.userId ?
           `/api/files/cv/${linkedUser.userId}`
         : `/api/files/cv/inline`
-      const res = await fetch(endpoint, { method: 'POST', body: form })
+      let res: Response
+      try {
+        res = await fetch(endpoint, { method: 'POST', body: form })
+      } catch (error) {
+        notifications.show({
+          title: 'Error de red',
+          message: `No se pudo conectar al servidor: ${(error as Error).message}`,
+          intent: 'error',
+        })
+        return
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         notifications.show({
-          title: 'Error al subir',
-          message: data?.error || 'No se pudo subir el CV',
+          title: `Error al subir (${res.status})`,
+          message: data?.error || `El servidor rechazó el archivo (HTTP ${res.status}).`,
           intent: 'error',
         })
         return
@@ -105,7 +125,7 @@ export function TeamMemberCvCell({
       })
       notifications.show({
         title: 'CV cargado',
-        message: 'El CV se asoció al miembro',
+        message: 'El CV se asoció al miembro.',
         intent: 'success',
       })
     } finally {
