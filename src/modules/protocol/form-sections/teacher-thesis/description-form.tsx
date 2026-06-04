@@ -16,6 +16,11 @@ import { FormTextarea } from '@shared/form/form-textarea'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Plus, X } from 'tabler-icons-react'
+import {
+  FieldInfo,
+  ObjectiveInfo,
+  TypeInfo,
+} from '../description-tooltips'
 
 const dictToOptions = (d: Record<string, { code: string; label: string; description?: string }>) =>
   Object.values(d).map((o) => ({
@@ -141,16 +146,19 @@ export function TtDescriptionForm() {
             </div>
           </div>
 
+          <FieldInfo />
           <FormListbox
             label="Campo de aplicación"
             options={dictToOptions(APPLICATION_FIELDS)}
             {...form.getInputProps('sections.teacherThesis.description.applicationField')}
           />
+          <ObjectiveInfo />
           <FormListbox
             label="Objetivo socioeconómico"
             options={dictToOptions(SOCIOECONOMIC_OBJECTIVES)}
             {...form.getInputProps('sections.teacherThesis.description.socioeconomicObjective')}
           />
+          <TypeInfo />
           <FormListbox
             label="Tipo de investigación"
             options={dictToOptions(RESEARCH_TYPES)}
