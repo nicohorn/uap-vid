@@ -101,6 +101,7 @@ model Protocol {
   ChatMessage     ChatMessage[]
   flags           ProtocolFlag[]
   executions      Execution[]
+  secretaryChecklist SecretaryChecklist?
 }
 
 type ProtocolFlag {
@@ -108,6 +109,29 @@ type ProtocolFlag {
   state     Boolean  @default(false)
   comment   String?
   createdAt DateTime @default(now()) @db.Date
+}
+
+/**
+ * Pre-evaluation administrative + ethical checklist filled by the
+ * Secretaría de Investigación. Critical items gate ASSIGN_TO_METHODOLOGIST.
+ * Items list and critical flags come from `src/utils/secretary-checklist.ts`.
+ */
+type SecretaryChecklist {
+  items         SecretaryChecklistItem[]
+  updatedAt     DateTime?                @db.Date
+  updatedById   String?                  @db.ObjectId
+  completedAt   DateTime?                @db.Date
+  // Last-known AI run; useful for telemetry + showing "Sugerencias del DD/MM"
+  // next to the panel header.
+  aiRequestedAt DateTime?                @db.Date
+}
+
+type SecretaryChecklistItem {
+  key         String
+  state       String        // YES | NO | NOT_APPLICABLE | PENDING
+  comment     String?
+  aiState     String?       // YES | NO | NOT_APPLICABLE | UNKNOWN
+  aiRationale String?
 }
 
 model User {
