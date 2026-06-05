@@ -13,7 +13,6 @@ import {
 } from '@utils/zod/secretary-checklist'
 import { getServerSession } from 'next-auth'
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
-import { requestChecklistSuggestions } from '@utils/ai/secretary-checklist'
 import { z } from 'zod'
 
 const assertSecretaryOrAdmin = async () => {
@@ -55,7 +54,6 @@ export const upsertSecretaryChecklistItems = async (
     updatedAt: null,
     updatedById: null,
     completedAt: null,
-    aiRequestedAt: null,
   }
   // Merge: keep items not touched in this update, overwrite the ones the
   // secretary modified. New items get appended.
@@ -68,54 +66,6 @@ export const upsertSecretaryChecklistItems = async (
     items: Array.from(byKey.values()),
     updatedAt: new Date(),
     updatedById: userId,
-  }
-  await prisma.protocol.update({
-    where: { id: protocolId },
-    data: { secretaryChecklist: next },
-  })
-  return next
-}
-
-export const requestSecretaryChecklistAi = async (protocolId: string) => {
-  await assertSecretaryOrAdmin()
-  const protocol = await prisma.protocol.findUnique({
-    where: { id: protocolId },
-  })
-  if (!protocol) throw new Error('Protocol not found')
-  const results = await requestChecklistSuggestions(protocol)
-  return setSecretaryChecklistAiResults(protocolId, results)
-}
-
-const setSecretaryChecklistAiResults = async (
-  protocolId: string,
-  results: { key: string; aiState: string; aiRationale: string }[]
-) => {
-  const current = (await getSecretaryChecklist(protocolId)) ?? {
-    items: [],
-    updatedAt: null,
-    updatedById: null,
-    completedAt: null,
-    aiRequestedAt: null,
-  }
-  const byKey = new Map(current.items.map((i) => [i.key, i]))
-  for (const r of results) {
-    const existing = byKey.get(r.key) ?? {
-      key: r.key,
-      state: 'PENDING' as const,
-      comment: null,
-      aiState: null,
-      aiRationale: null,
-    }
-    byKey.set(r.key, {
-      ...existing,
-      aiState: r.aiState as SecretaryChecklistItem['aiState'],
-      aiRationale: r.aiRationale,
-    })
-  }
-  const next: SecretaryChecklist = {
-    ...current,
-    items: Array.from(byKey.values()),
-    aiRequestedAt: new Date(),
   }
   await prisma.protocol.update({
     where: { id: protocolId },

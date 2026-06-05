@@ -13,12 +13,6 @@ export const ChecklistItemSchema = z.object({
   key: z.string().min(1),
   state: ChecklistStateSchema,
   comment: z.string().nullable().optional().default(null),
-  aiState: z
-    .enum(['YES', 'NO', 'NOT_APPLICABLE', 'UNKNOWN'])
-    .nullable()
-    .optional()
-    .default(null),
-  aiRationale: z.string().nullable().optional().default(null),
 })
 
 export const SecretaryChecklistSchema = z.object({
@@ -26,7 +20,6 @@ export const SecretaryChecklistSchema = z.object({
   updatedAt: z.coerce.date().nullable().optional().default(null),
   updatedById: z.string().nullable().optional().default(null),
   completedAt: z.coerce.date().nullable().optional().default(null),
-  aiRequestedAt: z.coerce.date().nullable().optional().default(null),
 })
 
 export type SecretaryChecklist = z.infer<typeof SecretaryChecklistSchema>

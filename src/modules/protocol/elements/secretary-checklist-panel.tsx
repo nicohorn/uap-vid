@@ -1,11 +1,9 @@
 'use client'
 
-import { Button } from '@components/button'
 import { Badge } from '@components/badge'
 import { notifications } from '@elements/notifications'
 import {
   getSecretaryChecklist,
-  requestSecretaryChecklistAi,
   upsertSecretaryChecklistItems,
 } from '@repositories/secretary-checklist'
 import {
@@ -22,8 +20,6 @@ import {
   ChevronDown,
   ChevronUp,
   GripVertical,
-  Robot,
-  Stars,
   X,
 } from 'tabler-icons-react'
 
@@ -41,13 +37,6 @@ const STATE_LABELS: Record<ChecklistState, string> = {
   PENDING: 'Pendiente',
 }
 
-const AI_LABELS: Record<string, string> = {
-  YES: 'Sí',
-  NO: 'No',
-  NOT_APPLICABLE: 'N/A',
-  UNKNOWN: 'No determinado',
-}
-
 // Map item-key → flat checklist item. Defaults missing items to PENDING so the
 // UI is renderable even when the user opens it for the first time.
 const buildItemMap = (
@@ -62,17 +51,16 @@ export function SecretaryChecklistPanel({
   const [open, setOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [aiLoading, setAiLoading] = useState(false)
   const [items, setItems] = useState<Map<string, SecretaryChecklistItem>>(
     new Map()
   )
-  const [aiRequestedAt, setAiRequestedAt] = useState<Date | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<
     Set<ChecklistCategory>
   >(new Set(Object.keys(CHECKLIST_CATEGORIES) as ChecklistCategory[]))
   const [pos, setPos] = useState<StoredPos>({ x: 24, y: 96 })
   const panelRef = useRef<HTMLDivElement | null>(null)
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null)
+  const commentTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const categories = itemsByCategory()
 
@@ -104,10 +92,7 @@ export function SecretaryChecklistPanel({
     setLoading(true)
     getSecretaryChecklist(protocolId)
       .then((c) => {
-        if (c) {
-          setItems(buildItemMap(c.items))
-          setAiRequestedAt(c.aiRequestedAt ?? null)
-        }
+        if (c) setItems(buildItemMap(c.items))
       })
       .catch((e) => {
         notifications.show({
@@ -139,8 +124,6 @@ export function SecretaryChecklistPanel({
       key: def.key,
       state: 'PENDING' as ChecklistState,
       comment: null,
-      aiState: null,
-      aiRationale: null,
     }
     const updated: SecretaryChecklistItem = { ...existing, state }
     setItems((prev) => {
@@ -156,8 +139,6 @@ export function SecretaryChecklistPanel({
       key: def.key,
       state: 'PENDING' as ChecklistState,
       comment: null,
-      aiState: null,
-      aiRationale: null,
     }
     const updated: SecretaryChecklistItem = { ...existing, comment }
     setItems((prev) => {
@@ -172,29 +153,6 @@ export function SecretaryChecklistPanel({
     commentTimers.current[def.key] = setTimeout(() => {
       void persistItem(updated)
     }, 600)
-  }
-  const commentTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
-
-  const requestAi = async () => {
-    setAiLoading(true)
-    try {
-      const result = await requestSecretaryChecklistAi(protocolId)
-      setItems(buildItemMap(result.items))
-      setAiRequestedAt(result.aiRequestedAt ?? new Date())
-      notifications.show({
-        title: 'Sugerencias generadas',
-        message: 'Revisá las propuestas — la decisión final es tuya.',
-        intent: 'success',
-      })
-    } catch (e) {
-      notifications.show({
-        title: 'Error al consultar la IA',
-        message: (e as Error).message,
-        intent: 'error',
-      })
-    } finally {
-      setAiLoading(false)
-    }
   }
 
   const onHeaderMouseDown = (e: React.MouseEvent) => {
@@ -320,127 +278,89 @@ export function SecretaryChecklistPanel({
       </div>
 
       {!collapsed && (
-        <>
-          {/* AI bar */}
-          <div className="flex items-center gap-2 border-b border-gray-200 bg-blue-50 px-3 py-2 dark:border-gray-700 dark:bg-blue-950/30">
-            <Stars className="size-4 text-blue-700 dark:text-blue-300" />
-            <div className="flex-1 text-xs">
-              <div className="font-medium text-blue-800 dark:text-blue-200">
-                Sugerencias IA (modo orientativo)
-              </div>
-              <div className="text-blue-700/80 dark:text-blue-300/80">
-                {aiRequestedAt
-                  ? `Última corrida: ${new Date(aiRequestedAt).toLocaleString('es-AR')}`
-                  : 'La decisión final es siempre tuya.'}
-              </div>
-            </div>
-            <Button onClick={requestAi} disabled={aiLoading} color="light">
-              <Robot data-slot="icon" />
-              {aiLoading ? 'Analizando…' : 'Pedir sugerencias'}
-            </Button>
-          </div>
-
-          {/* Body */}
-          <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto p-3">
-            {loading && (
-              <div className="text-center text-sm text-gray-500">Cargando…</div>
-            )}
-            {(Object.keys(CHECKLIST_CATEGORIES) as ChecklistCategory[]).map(
-              (cat) => {
-                const catItems = categories[cat]
-                const catAnswered = catItems.filter(
-                  (d) => items.get(d.key)?.state && items.get(d.key)?.state !== 'PENDING'
-                ).length
-                const isExpanded = expandedCategories.has(cat)
-                return (
-                  <div
-                    key={cat}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700"
+        <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto p-3">
+          {loading && (
+            <div className="text-center text-sm text-gray-500">Cargando…</div>
+          )}
+          {(Object.keys(CHECKLIST_CATEGORIES) as ChecklistCategory[]).map(
+            (cat) => {
+              const catItems = categories[cat]
+              const catAnswered = catItems.filter(
+                (d) => items.get(d.key)?.state && items.get(d.key)?.state !== 'PENDING'
+              ).length
+              const isExpanded = expandedCategories.has(cat)
+              return (
+                <div
+                  key={cat}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className="flex w-full items-center justify-between gap-2 rounded-t-lg bg-gray-50 px-3 py-2 text-left text-sm font-medium dark:bg-gray-800"
                   >
-                    <button
-                      type="button"
-                      onClick={() => toggleCategory(cat)}
-                      className="flex w-full items-center justify-between gap-2 rounded-t-lg bg-gray-50 px-3 py-2 text-left text-sm font-medium dark:bg-gray-800"
-                    >
-                      <span>{CHECKLIST_CATEGORIES[cat]}</span>
-                      <span className="text-xs text-gray-500">
-                        {catAnswered}/{catItems.length}
-                        {isExpanded ? (
-                          <ChevronUp className="ml-2 inline size-4" />
-                        ) : (
-                          <ChevronDown className="ml-2 inline size-4" />
-                        )}
-                      </span>
-                    </button>
-                    {isExpanded && (
-                      <div className="space-y-3 p-3">
-                        {catItems.map((def) => {
-                          const item = items.get(def.key)
-                          const currentState =
-                            (item?.state as ChecklistState) ?? 'PENDING'
-                          return (
-                            <div
-                              key={def.key}
-                              className={`rounded border p-2 ${def.critical ? 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-800'}`}
-                            >
-                              <div className="flex items-start gap-2">
-                                <div className="flex-1 text-xs">
-                                  {def.critical && (
-                                    <Badge color="red" className="mb-1 !text-[10px]">
-                                      Crítico
-                                    </Badge>
-                                  )}
-                                  <div>{def.label}</div>
-                                </div>
+                    <span>{CHECKLIST_CATEGORIES[cat]}</span>
+                    <span className="text-xs text-gray-500">
+                      {catAnswered}/{catItems.length}
+                      {isExpanded ? (
+                        <ChevronUp className="ml-2 inline size-4" />
+                      ) : (
+                        <ChevronDown className="ml-2 inline size-4" />
+                      )}
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="space-y-3 p-3">
+                      {catItems.map((def) => {
+                        const item = items.get(def.key)
+                        const currentState =
+                          (item?.state as ChecklistState) ?? 'PENDING'
+                        return (
+                          <div
+                            key={def.key}
+                            className={`rounded border p-2 ${def.critical ? 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-800'}`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 text-xs">
+                                {def.critical && (
+                                  <Badge color="red" className="mb-1 !text-[10px]">
+                                    Crítico
+                                  </Badge>
+                                )}
+                                <div>{def.label}</div>
                               </div>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {(
-                                  ['YES', 'NO', 'NOT_APPLICABLE', 'PENDING'] as ChecklistState[]
-                                ).map((s) => (
-                                  <button
-                                    key={s}
-                                    type="button"
-                                    onClick={() => setState(def, s)}
-                                    className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${currentState === s ? stateButtonOn(s) : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'}`}
-                                  >
-                                    {STATE_LABELS[s]}
-                                  </button>
-                                ))}
-                              </div>
-                              {item?.aiState && (
-                                <div className="mt-2 rounded bg-blue-50 p-2 text-xs dark:bg-blue-950/30">
-                                  <div className="flex items-center gap-1 font-medium text-blue-700 dark:text-blue-300">
-                                    <Stars className="size-3" />
-                                    IA sugiere:{' '}
-                                    <Badge color={aiBadgeColor(item.aiState)} className="!text-[10px]">
-                                      {AI_LABELS[item.aiState] ?? item.aiState}
-                                    </Badge>
-                                  </div>
-                                  {item.aiRationale && (
-                                    <div className="mt-1 text-blue-800/80 dark:text-blue-200/80">
-                                      {item.aiRationale}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              <textarea
-                                placeholder="Comentario (opcional)"
-                                value={item?.comment ?? ''}
-                                onChange={(e) => setComment(def, e.target.value)}
-                                rows={1}
-                                className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                              />
                             </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              }
-            )}
-          </div>
-        </>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {(
+                                ['YES', 'NO', 'NOT_APPLICABLE', 'PENDING'] as ChecklistState[]
+                              ).map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setState(def, s)}
+                                  className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${currentState === s ? stateButtonOn(s) : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'}`}
+                                >
+                                  {STATE_LABELS[s]}
+                                </button>
+                              ))}
+                            </div>
+                            <textarea
+                              placeholder="Comentario (opcional)"
+                              value={item?.comment ?? ''}
+                              onChange={(e) => setComment(def, e.target.value)}
+                              rows={1}
+                              className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          )}
+        </div>
       )}
     </div>
   )
@@ -457,11 +377,4 @@ const stateButtonOn = (s: ChecklistState): string => {
     case 'PENDING':
       return 'bg-yellow-500 text-white'
   }
-}
-
-const aiBadgeColor = (s: string): 'green' | 'red' | 'gray' | 'yellow' => {
-  if (s === 'YES') return 'green'
-  if (s === 'NO') return 'red'
-  if (s === 'NOT_APPLICABLE') return 'gray'
-  return 'yellow'
 }

@@ -117,21 +117,16 @@ type ProtocolFlag {
  * Items list and critical flags come from `src/utils/secretary-checklist.ts`.
  */
 type SecretaryChecklist {
-  items         SecretaryChecklistItem[]
-  updatedAt     DateTime?                @db.Date
-  updatedById   String?                  @db.ObjectId
-  completedAt   DateTime?                @db.Date
-  // Last-known AI run; useful for telemetry + showing "Sugerencias del DD/MM"
-  // next to the panel header.
-  aiRequestedAt DateTime?                @db.Date
+  items       SecretaryChecklistItem[]
+  updatedAt   DateTime?                @db.Date
+  updatedById String?                  @db.ObjectId
+  completedAt DateTime?                @db.Date
 }
 
 type SecretaryChecklistItem {
-  key         String
-  state       String        // YES | NO | NOT_APPLICABLE | PENDING
-  comment     String?
-  aiState     String?       // YES | NO | NOT_APPLICABLE | UNKNOWN
-  aiRationale String?
+  key     String
+  state   String // YES | NO | NOT_APPLICABLE | PENDING
+  comment String?
 }
 
 model User {
