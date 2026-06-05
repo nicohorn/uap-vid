@@ -21,6 +21,7 @@ import ProtocolNumberUpdate from '@protocol/elements/protocol-number-update'
 import { ReviewDisclose } from '@review/review-disclose'
 import OpenFlagsDialog from '@protocol/elements/flags/open-flags-dialog-button'
 import { ConfirmTeamMembersForm } from '@protocol/form-sections/confirm-team-members-form'
+import { SecretaryChecklistPanel } from '@protocol/elements/secretary-checklist-panel'
 
 export default async function Layout({
   params,
@@ -145,6 +146,16 @@ export default async function Layout({
 
           <ChatFullComponent user={session.user} protocolId={protocol.id} />
         </ContextMenu>
+        {/*
+          Secretary checklist is only relevant for STANDARD protocols (TT goes
+          straight to admin approval, no evaluator handoff). Mounted at the
+          layout level so it stays open across section navigation.
+        */}
+        {protocol.protocolType !== 'TEACHER_THESIS' &&
+          (session.user.role === 'SECRETARY' ||
+            session.user.role === 'ADMIN') && (
+            <SecretaryChecklistPanel protocolId={protocol.id} />
+          )}
       </div>
     )
 }

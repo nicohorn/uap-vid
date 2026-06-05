@@ -14,6 +14,7 @@ import { authOptions } from 'app/api/auth/[...nextauth]/auth'
 import { getProtocolMetadata } from '@repositories/protocol'
 import { AssignEvaluatorSelector } from '@review/elements/review-assign-select'
 import { EvaluatorsDialog } from '@protocol/elements/open-evaluators-dialog'
+import { validateChecklistForAssignment } from '@repositories/secretary-checklist'
 
 export default async function ReviewAssignation({
   params,
@@ -48,6 +49,15 @@ export default async function ReviewAssignation({
       (x) => x.type === ReviewType.METHODOLOGICAL
     )?.verdict
 
+    // Critical-item gate: secretary cannot send the protocol to
+    // methodological evaluation until the 5 excluyentes are all "Sí".
+    // Admins can still override — they see a warning but the selector is
+    // not removed for them.
+    const checklistGate = await validateChecklistForAssignment(protocol.id)
+    const isAdmin = session.user.role === Role.ADMIN
+    const checklistBlocksMethodological =
+      !checklistGate.ok && !isAdmin && protocol.state === ProtocolState.PUBLISHED
+
     const reviewAssignSelectsData = [
       {
         type: ReviewType.METHODOLOGICAL,
@@ -55,11 +65,12 @@ export default async function ReviewAssignation({
           (u) =>
             u.role === Role.METHODOLOGIST && u.id !== protocol.researcher.id
         ),
-        enabled: canExecute(
-          Action.ASSIGN_TO_METHODOLOGIST,
-          session.user.role,
-          protocol.state
-        ),
+        enabled:
+          canExecute(
+            Action.ASSIGN_TO_METHODOLOGIST,
+            session.user.role,
+            protocol.state
+          ) && !checklistBlocksMethodological,
         review:
           reviews.find((review) => review.type === ReviewType.METHODOLOGICAL) ??
           null,
@@ -139,6 +150,38 @@ export default async function ReviewAssignation({
     return (
       <EvaluatorsDialog>
         <div className="print:hidden">
+          {checklistBlocksMethodological && (
+            <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+              <div className="mb-1 font-semibold">
+                No se puede asignar evaluador metodológico
+              </div>
+              <div className="mb-2">
+                Faltan ítems críticos del checklist de secretaría:
+              </div>
+              <ul className="ml-4 list-disc space-y-1">
+                {checklistGate.missing.map((m) => (
+                  <li key={m.key}>
+                    {m.label} — <span className="italic">{m.reason}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2">
+                Abrí el panel "Checklist" (botón inferior derecho) y completá los
+                ítems excluyentes antes de continuar.
+              </div>
+            </div>
+          )}
+          {isAdmin && !checklistGate.ok &&
+            protocol.state === ProtocolState.PUBLISHED && (
+              <div className="mb-3 rounded-md border border-yellow-300 bg-yellow-50 p-3 text-xs text-yellow-900 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-100">
+                <span className="font-semibold">Atención (admin override):</span>{' '}
+                el checklist de secretaría tiene {checklistGate.missing.length}{' '}
+                ítem{checklistGate.missing.length === 1 ? '' : 's'} crítico
+                {checklistGate.missing.length === 1 ? '' : 's'} sin "Sí". Podés
+                continuar pero la asignación quedará registrada con observación
+                pendiente.
+              </div>
+            )}
           {reviewAssignSelectsData.map(
             (data) =>
               data.enabled && (
