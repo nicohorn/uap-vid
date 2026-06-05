@@ -213,6 +213,11 @@ const findProtocolByIdWithResearcher = cache(
             select: { createdAt: true, year: true, id: true, state: true },
           },
           flags: true,
+          // Consumers (ActionsDropdown, AnualBudgetPreview) derive their prop
+          // shape from `Prisma.ProtocolGetPayload<{ include: ... }>`, which
+          // includes every scalar/composite — so the new secretaryChecklist
+          // composite must be selected here too or TS rejects the assignment.
+          secretaryChecklist: true,
         },
       })
   )
