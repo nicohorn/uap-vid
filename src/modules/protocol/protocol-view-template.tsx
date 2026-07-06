@@ -4,6 +4,7 @@ import DescriptionView from './view-sections/description-view'
 import DurationView from './view-sections/duration-view'
 import IdentificationView from './view-sections/identification-view'
 import IntroductionView from './view-sections/introduction-view'
+import MethodologyView from './view-sections/methodology-view'
 import PublicationView from './view-sections/publication-view'
 import BudgetView from './view-sections/budget-view'
 import TtIdentificationView from './view-sections/teacher-thesis/identification-view'
@@ -43,6 +44,10 @@ export default async function View({
       <DurationView data={sections.duration} />
       <BudgetView data={sections.budget} />
       <DescriptionView data={sections.description} />
+      <MethodologyView
+        data={sections.methodology}
+        approach={sections.description.methodologicalApproach}
+      />
       <IntroductionView data={sections.introduction} />
       <PublicationView data={sections.publication} />
       <BibliographyView data={sections.bibliography} />

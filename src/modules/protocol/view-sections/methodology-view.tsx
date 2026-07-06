@@ -2,16 +2,26 @@ import type { ProtocolSectionsMethodology } from '@prisma/client'
 import SectionViewer from '../elements/view/section-viewer'
 import ItemView from '@protocol/elements/view/item-view'
 import TextItemView from '@protocol/elements/view/text-item-view'
+import {
+  methodologyTypeForApproach,
+  QUANTITATIVE_QUALITATIVE_METHODOLOGY_TYPE,
+  THEORETICAL_METHODOLOGY_TYPE,
+} from '@utils/methodology'
 
 interface MethodologyViewProps {
   data: ProtocolSectionsMethodology
+  approach?: string | null
 }
 
-const MethodologyView = ({ data }: MethodologyViewProps) => {
+const MethodologyView = ({ data, approach }: MethodologyViewProps) => {
+  // Protocols saved while methodology lived in its own tab carry `type`;
+  // newer ones derive it from the description's approach dropdown.
+  const type = data.type || methodologyTypeForApproach(approach)
+
   const shortData = [
     {
       title: 'Tipo de Metodología',
-      value: data.type,
+      value: type,
     },
   ]
   return (
@@ -20,8 +30,7 @@ const MethodologyView = ({ data }: MethodologyViewProps) => {
         <ItemView key={item.title} title={item.title} value={item.value} />
       ))}
 
-      {data.type ===
-        'Investigaciones cuantitativas, cualitativas, mixtas o experimentales' && (
+      {type === QUANTITATIVE_QUALITATIVE_METHODOLOGY_TYPE && (
         <>
           <TextItemView
             title="Diseño y tipo de investigación"
@@ -42,7 +51,7 @@ const MethodologyView = ({ data }: MethodologyViewProps) => {
         </>
       )}
 
-      {data.type === 'Investigaciones de tipo teóricas' && (
+      {type === THEORETICAL_METHODOLOGY_TYPE && (
         <TextItemView title="Detalle de la metodología" content={data.detail} />
       )}
     </SectionViewer>
