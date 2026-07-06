@@ -49,6 +49,9 @@ import type { ProtocolType } from '@utils/protocol-types'
 type SectionDef = {
   key: string
   path: string
+  // Additional form paths whose validity/dirtiness the section badge should
+  // also reflect (e.g. Descripción hosts the sections.methodology fields).
+  extraPaths?: string[]
   label: string
   render: () => JSX.Element
 }
@@ -57,7 +60,7 @@ const standardSections: SectionDef[] = [
   { key: '0', path: 'sections.identification', label: 'Identificación', render: () => <IdentificationForm /> },
   { key: '1', path: 'sections.duration', label: 'Tipo y duración', render: () => <DurationForm /> },
   { key: '2', path: 'sections.budget', label: 'Presupuesto', render: () => <BudgetForm /> },
-  { key: '3', path: 'sections.description', label: 'Descripción', render: () => <DescriptionForm /> },
+  { key: '3', path: 'sections.description', extraPaths: ['sections.methodology'], label: 'Descripción', render: () => <DescriptionForm /> },
   { key: '4', path: 'sections.introduction', label: 'Introducción', render: () => <IntroductionForm /> },
   { key: '5', path: 'sections.publication', label: 'Producción', render: () => <PublicationForm /> },
   { key: '6', path: 'sections.bibliography', label: 'Bibliografía', render: () => <BibliographyForm /> },
@@ -433,34 +436,41 @@ export default function ProtocolForm({
   const SectionButton = useCallback(
     ({
       path,
+      extraPaths = [],
       label,
       value,
     }: {
       path: string
+      extraPaths?: string[]
       label: string
       value: string
-    }) => (
-      <BadgeButton
-        color="light"
-        className={cx(
-          'opacity-70',
-          section == value && 'font-semibold opacity-100'
-        )}
-        onClick={() => {
-          startTransition(() => {
-            setSection(value)
-          })
-        }}
-      >
-        {label}
+    }) => {
+      const paths = [path, ...extraPaths]
+      const isValid = paths.every((p) => form.isValid(p))
+      const isDirty = paths.some((p) => form.isDirty(p))
+      return (
+        <BadgeButton
+          color="light"
+          className={cx(
+            'opacity-70',
+            section == value && 'font-semibold opacity-100'
+          )}
+          onClick={() => {
+            startTransition(() => {
+              setSection(value)
+            })
+          }}
+        >
+          {label}
 
-        {!form.isValid(path) ?
-          form.isDirty(path) ?
-            <AlertCircle className="size-4 stroke-yellow-500" />
-            : <CircleDashed className="size-3.5 stroke-gray-500" />
-          : <CircleCheck className="size-4 stroke-teal-500" />}
-      </BadgeButton>
-    ),
+          {!isValid ?
+            isDirty ?
+              <AlertCircle className="size-4 stroke-yellow-500" />
+              : <CircleDashed className="size-3.5 stroke-gray-500" />
+            : <CircleCheck className="size-4 stroke-teal-500" />}
+        </BadgeButton>
+      )
+    },
     [form, section]
   )
 
@@ -549,6 +559,7 @@ export default function ProtocolForm({
             <SectionButton
               key={s.key}
               path={s.path}
+              extraPaths={s.extraPaths}
               label={s.label}
               value={s.key}
             />

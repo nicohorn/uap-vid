@@ -1,13 +1,20 @@
 'use client'
 import { useProtocolContext } from 'utils/createContext'
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 
 import { FormTitapTextarea } from '@shared/form/form-tiptap-textarea'
 import { FormListbox } from '@shared/form/form-listbox'
+import { FormCheckbox } from '@shared/form/form-checkbox'
 import { FieldGroup, Fieldset, Legend } from '@components/fieldset'
 import { FormCombobox } from '@shared/form/form-combobox'
 import { FormInput } from '@shared/form/form-input'
 import { DISCIPLINES, linesForDiscipline } from '@utils/disciplines'
+import {
+  methodologyTypeForApproach,
+  QUANTITATIVE_QUALITATIVE_METHODOLOGY_TYPE,
+  THEORETICAL_METHODOLOGY_TYPE,
+} from '@utils/methodology'
 import {
   FieldInfo,
   ObjectiveInfo,
@@ -16,6 +23,26 @@ import {
 
 export function DescriptionForm() {
   const form = useProtocolContext()
+
+  const approach = form.values.sections.description?.methodologicalApproach
+  // The approach dropdown drives the branch; protocols saved before the
+  // dropdowns existed fall back to their stored methodology type so their
+  // fields stay editable.
+  const methodologyType =
+    methodologyTypeForApproach(approach) ||
+    form.values.sections.methodology?.type
+
+  // Keep the legacy methodology.type in sync with the approach dropdown so
+  // the stored data keeps the same shape as protocols created when
+  // methodology was its own tab. Old protocols keep their saved type until
+  // the researcher picks an approach.
+  useEffect(() => {
+    if (!approach || !form.values.sections.methodology) return
+    const derived = methodologyTypeForApproach(approach)
+    if (form.values.sections.methodology.type !== derived)
+      form.setFieldValue('sections.methodology.type', derived)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approach])
 
   return (
     <motion.div
@@ -82,7 +109,89 @@ export function DescriptionForm() {
           />
         </FieldGroup>
       </Fieldset>
+
+      {/* Methodology detail moved here from the removed Metodología tab.
+          The branch mirrors the old form's two types, now driven by the
+          approach dropdown. */}
+      {methodologyType ?
+        <Fieldset className="mt-8">
+          <Legend>Metodología</Legend>
+          <FieldGroup>
+            {methodologyType === THEORETICAL_METHODOLOGY_TYPE && (
+              <TheoreticalMethodology />
+            )}
+            {methodologyType === QUANTITATIVE_QUALITATIVE_METHODOLOGY_TYPE && (
+              <QuantitativeQualitativeMethodology />
+            )}
+          </FieldGroup>
+        </Fieldset>
+      : null}
     </motion.div>
+  )
+}
+
+const QuantitativeQualitativeMethodology = () => {
+  const form = useProtocolContext()
+  return (
+    <>
+      <FormTitapTextarea
+        label="Diseño"
+        description="Describa el diseño y el tipo de investigación"
+        {...form.getInputProps('sections.methodology.design')}
+      />
+      <FormTitapTextarea
+        label="Participantes"
+        description="Participantes en la metodología del proyecto"
+        {...form.getInputProps('sections.methodology.participants')}
+      />
+      <FormTitapTextarea
+        label="Lugar"
+        description="El lugar donde se llevará a cabo el desarrollo de la investigación"
+        {...form.getInputProps('sections.methodology.place')}
+      />
+      <FormTitapTextarea
+        label="Análisis de datos"
+        description="Describa brevemente el proceso de análisis de los datos"
+        {...form.getInputProps('sections.methodology.analysis')}
+      />
+      <FormCheckbox
+        label="Procedimientos especiales"
+        description="Proyecto con procedimientos en humanos, animales o en base de datos"
+        {...form.getInputProps('sections.methodology.humanAnimalOrDb', {
+          type: 'checkbox',
+        })}
+      />
+
+      {form.values.sections.methodology!.humanAnimalOrDb && (
+        <>
+          <FormTitapTextarea
+            label="Procedimientos de recolección"
+            description="Qué procedimientos se utilizarán para la recolección de datos"
+            {...form.getInputProps('sections.methodology.procedures')}
+          />
+          <FormTitapTextarea
+            label="Instrumentos de recolección"
+            description="Los instrumentos que se utilizarán para la recolección de datos"
+            {...form.getInputProps('sections.methodology.instruments')}
+          />
+          <FormTitapTextarea
+            label="Consideraciones éticas"
+            description="Describa brevemente las consideraciones éticas a tener en cuenta"
+            {...form.getInputProps('sections.methodology.considerations')}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+const TheoreticalMethodology = () => {
+  const form = useProtocolContext()
+  return (
+    <FormTitapTextarea
+      label="Detalle de metodología"
+      {...form.getInputProps('sections.methodology.detail')}
+    />
   )
 }
 

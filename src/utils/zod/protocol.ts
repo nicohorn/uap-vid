@@ -263,7 +263,10 @@ export const MethodologySchema = z.object({
     .string()
     .min(1, { message: 'El campo no puede estar vacío' })
     .nullable(),
-  type: z.string().min(1, { message: 'El campo no puede estar vacío' }),
+  // Derived from description.methodologicalApproach since the methodology
+  // fields moved into the Descripción tab; may be empty on protocols saved
+  // in between.
+  type: z.string().optional().default(''),
   humanAnimalOrDb: z.boolean().nullable(),
 })
 
@@ -331,6 +334,7 @@ export const ProtocolSchema = z
       'budget',
       'description',
       'introduction',
+      'methodology',
       'publication',
       'bibliography',
     ] as const
