@@ -170,22 +170,39 @@ export default async function ActionsPage({
     if (!filteredActions.includes(Action.EDIT)) {
       filteredActions.push(Action.EDIT)
     }
-  } else {
-    // For non-Admins, filter out actions if they were allowed by state but fail business logic checks.
-    if (publishChecksFailed) {
+  }
+
+  // Actions the user's role/state would allow but that fail a business check.
+  // Instead of silently hiding them (which left users wondering where the
+  // button went), they render disabled with the reason.
+  const disabledActions: Partial<Record<Action, string>> = {}
+
+  if (!isAdmin) {
+    // For non-Admins, disable actions if they were allowed by state but fail business logic checks.
+    if (publishChecksFailed && filteredActions.includes(Action.PUBLISH)) {
       filteredActions = filteredActions.filter((e) => e !== Action.PUBLISH)
+      disabledActions[Action.PUBLISH] =
+        checkResults.publish.message ||
+        'El protocolo no cumple los requisitos para ser publicado.'
     }
-    if (hasUnreviewed) {
+    if (hasUnreviewed && filteredActions.includes(Action.ACCEPT)) {
       filteredActions = filteredActions.filter((e) => e !== Action.ACCEPT)
+      disabledActions[Action.ACCEPT] =
+        checkResults.accept.message ||
+        'No todas las evaluaciones han sido completadas.'
     }
-    if (approveChecksFailed) {
+    if (approveChecksFailed && filteredActions.includes(Action.APPROVE)) {
       filteredActions = filteredActions.filter((e) => e !== Action.APPROVE)
+      disabledActions[Action.APPROVE] =
+        checkResults.approve.message ||
+        'El protocolo no tiene los votos requeridos.'
     }
   }
 
   return (
     <ActionsDropdown
       actions={filteredActions}
+      disabledActions={disabledActions}
       protocol={protocol}
       canViewLogs={session.user.role === 'ADMIN'}
       userRole={session.user.role}

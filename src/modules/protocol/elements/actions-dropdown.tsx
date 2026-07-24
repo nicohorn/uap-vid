@@ -3,6 +3,7 @@
 import {
   Dropdown,
   DropdownButton,
+  DropdownDescription,
   DropdownDivider,
   DropdownItem,
   DropdownLabel,
@@ -77,12 +78,19 @@ type CheckResults = {
 
 export function ActionsDropdown({
   actions,
+  disabledActions = {},
   protocol,
   canViewLogs,
   userRole,
   checkResults,
 }: {
   actions: Action[]
+  /**
+   * Actions the user's role/state would allow but that fail a business
+   * check — rendered disabled with the reason instead of hidden, so the
+   * user knows what's missing (e.g. why "Publicar" is not available).
+   */
+  disabledActions?: Partial<Record<Action, string>>
   protocol: Prisma.ProtocolGetPayload<{
     include: {
       researcher: { select: { id: true; name: true; email: true } }
@@ -510,24 +518,37 @@ export function ActionsDropdown({
         <DropdownMenu anchor="bottom end">
           {/* Actions that are used in the lifetime of a project */}
           {actionsToOptions
-            .filter((a) => actions.includes(a.action))
-            .map((x, i) => (
-              <DropdownItem
-                key={i}
-                disabled={isPending}
-                onClick={async () => {
-                  if (x.callback) {
-                    const adminOverrideOpened = await x.callback()
-                    if (!adminOverrideOpened) {
-                      startTranstion(() => router.refresh())
+            .filter(
+              (a) =>
+                actions.includes(a.action) || disabledActions[a.action] != null
+            )
+            .map((x, i) => {
+              const disabledReason = disabledActions[x.action]
+              return (
+                <DropdownItem
+                  key={i}
+                  disabled={isPending || !!disabledReason}
+                  className={disabledReason ? 'opacity-60' : undefined}
+                  onClick={async () => {
+                    if (disabledReason) return
+                    if (x.callback) {
+                      const adminOverrideOpened = await x.callback()
+                      if (!adminOverrideOpened) {
+                        startTranstion(() => router.refresh())
+                      }
                     }
-                  }
-                }}
-              >
-                {x.icon}
-                <DropdownLabel>{ActionDictionary[x.action]}</DropdownLabel>
-              </DropdownItem>
-            ))}
+                  }}
+                >
+                  {x.icon}
+                  <DropdownLabel>{ActionDictionary[x.action]}</DropdownLabel>
+                  {disabledReason ?
+                    <DropdownDescription className="max-w-72 whitespace-normal">
+                      {disabledReason}
+                    </DropdownDescription>
+                  : null}
+                </DropdownItem>
+              )
+            })}
           <DropdownItem
             onClick={(e: any) => {
               setOpen(true)
