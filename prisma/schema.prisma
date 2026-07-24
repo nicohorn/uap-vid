@@ -379,9 +379,10 @@ type ProtocolSectionsTeacherThesisIdentification {
 }
 
 type ProtocolSectionsTeacherThesisTeamMember {
-  name        String
-  role        String
-  weeklyHours Int
+  name         String
+  role         String
+  teamMemberId String?
+  weeklyHours  Int
 }
 
 type ProtocolSectionsTeacherThesisDuration {

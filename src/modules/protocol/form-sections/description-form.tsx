@@ -8,7 +8,7 @@ import { FormListbox } from '@shared/form/form-listbox'
 import { FormCheckbox } from '@shared/form/form-checkbox'
 import { FieldGroup, Fieldset, Legend } from '@components/fieldset'
 import { FormCombobox } from '@shared/form/form-combobox'
-import { FormInput } from '@shared/form/form-input'
+import { FormKeywordsInput } from '@shared/form/form-keywords-input'
 import { DISCIPLINES, linesForDiscipline } from '@utils/disciplines'
 import {
   methodologyTypeForApproach,
@@ -75,9 +75,17 @@ export function DescriptionForm() {
             label="Resumen técnico, con una extensión mínima de 150 palabras y máxima de 250 palabras"
             {...form.getInputProps('sections.description.technical')}
           />
-          <FormInput
-            label="Palabras clave"
-            {...form.getInputProps('sections.description.words')}
+          {/* Stored as a comma-separated string (legacy shape) but edited
+              with the same chip input the teacher-thesis form uses. */}
+          <FormKeywordsInput
+            keywords={(form.values.sections.description?.words ?? '')
+              .split(',')
+              .map((w: string) => w.trim())
+              .filter(Boolean)}
+            error={form.getInputProps('sections.description.words').error}
+            onChange={(next) =>
+              form.setFieldValue('sections.description.words', next.join(', '))
+            }
           />
           <FieldInfo />
           <FormListbox

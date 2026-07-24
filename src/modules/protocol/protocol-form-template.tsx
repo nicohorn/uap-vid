@@ -136,8 +136,18 @@ const getDefaultTeacherThesis = () => ({
     postgraduateProgram: '',
     thesisType: '',
     sponsoringFaculty: '',
-    thesisCandidate: { name: '', role: 'Tesista', weeklyHours: 0 },
-    director: { name: '', role: 'Director', weeklyHours: 0 },
+    thesisCandidate: {
+      name: '',
+      role: 'Tesista',
+      teamMemberId: null,
+      weeklyHours: 0,
+    },
+    director: {
+      name: '',
+      role: 'Director',
+      teamMemberId: null,
+      weeklyHours: 0,
+    },
     additionalMembers: [],
     eligibleEvaluators: [],
   },
@@ -253,7 +263,9 @@ const sanitizeProtocolData = (protocol: any) => {
         ...defaults.identification,
         ...protocol.sections.identification,
         courseId: sanitizeObjectId(protocol.sections.identification?.courseId),
-        careerId: protocol.sections.identification?.careerId || '',
+        // '' is not a valid Mongo ObjectId — persist null instead (TT
+        // protocols never pick a career here).
+        careerId: sanitizeObjectId(protocol.sections.identification?.careerId),
         academicUnitIds:
           protocol.sections.identification?.academicUnitIds || [],
         team:

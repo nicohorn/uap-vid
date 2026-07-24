@@ -99,7 +99,6 @@ export const linesForDiscipline = (v: string): string[] => {
       'Exégesis neotestamentaria: Escritos joaninos (con especial énfasis en Apocalipsis)',
       'Filología neotestamentaria: Análisis semántico',
       'Filología neotestamentaria: Ecdótica',
-      'Abordajes exegéticos: Evaluación crítica de nuevas metodologías contemporáneas',
       'Abordajes exegéticos: Análisis retórico',
       'Abordajes exegéticos: Análisis epistolográfico',
       'Teología neotestamentaria: El conflicto cósmico en el NT',

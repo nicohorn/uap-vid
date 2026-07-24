@@ -34,8 +34,8 @@ export const PROTOCOL_SUBTYPES = dict<ProtocolSubtype>([
   { code: 'PTP', label: 'PTP', description: 'Proyecto Tesis Posgrado' },
 ])
 
-export type PostgraduateProgram = 'MASTERS' | 'DOCTORATE'
-export const POSTGRADUATE_PROGRAMS = dict<PostgraduateProgram>([
+export type ThesisType = 'MASTERS' | 'DOCTORATE'
+export const THESIS_TYPES = dict<ThesisType>([
   { code: 'MASTERS', label: 'Maestría' },
   { code: 'DOCTORATE', label: 'Doctorado' },
 ])
