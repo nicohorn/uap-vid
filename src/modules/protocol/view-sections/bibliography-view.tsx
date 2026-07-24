@@ -54,7 +54,7 @@ const BibliographyView = ({ data }: BibliographyViewProps) => {
     >
       <DescriptionTerm>Fuentes de información</DescriptionTerm>
       <DescriptionDetails>
-        <ol className="ml-5 list-decimal space-y-1">
+        <ol className="ml-5 list-decimal space-y-1 break-words">
           {entries.map((entry: any, i: number) => (
             <li key={i}>
               <Text className="inline">{entry.content}</Text>
@@ -64,7 +64,7 @@ const BibliographyView = ({ data }: BibliographyViewProps) => {
                   <Link
                     href={entry.link}
                     target="_blank"
-                    className="text-primary-700 underline dark:text-primary-300"
+                    className="break-all text-primary-700 underline dark:text-primary-300"
                   >
                     {entry.link}
                   </Link>

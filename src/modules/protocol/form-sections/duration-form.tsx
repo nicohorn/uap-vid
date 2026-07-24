@@ -54,10 +54,13 @@ export function DurationForm() {
   )
 }
 
+// PTP (Proyecto Tesis Posgrado) was removed as a selectable modality: teacher
+// thesis projects are now created via the TEACHER_THESIS protocol type.
+// Legacy protocols that stored the PTP modality still render/validate fine
+// because DurationSchema keeps modality as a free string.
 const modalities = [
   'Proyecto regular de investigación (PRI)',
   'Proyecto de investigación desde las cátedras (PIC)',
-  'Proyecto Tesis Posgrado (PTP)',
 ]
 
 /** Depending on if the project type is a "PIC", it can have a duration that's less than 12 months. Using this helper we manage to add this exception */
