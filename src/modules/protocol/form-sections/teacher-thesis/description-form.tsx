@@ -1,8 +1,6 @@
 'use client'
 
-import { Button } from '@components/button'
 import { FieldGroup, Fieldset, Legend } from '@components/fieldset'
-import { Text } from '@components/text'
 import { useProtocolContext } from '@utils/createContext'
 import { DISCIPLINES, linesForDiscipline } from '@utils/disciplines'
 import {
@@ -11,11 +9,10 @@ import {
   SOCIOECONOMIC_OBJECTIVES,
 } from '@utils/protocol-types'
 import { FormCombobox } from '@shared/form/form-combobox'
+import { FormKeywordsInput } from '@shared/form/form-keywords-input'
 import { FormListbox } from '@shared/form/form-listbox'
 import { FormTextarea } from '@shared/form/form-textarea'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { Plus, X } from 'tabler-icons-react'
 import {
   FieldInfo,
   ObjectiveInfo,
@@ -35,7 +32,6 @@ export function TtDescriptionForm() {
   const form = useProtocolContext()
   const description = form.values.sections.teacherThesis!.description
   const abstractWords = countWords(description.technicalAbstract || '')
-  const [keywordDraft, setKeywordDraft] = useState('')
 
   return (
     <motion.div
@@ -78,73 +74,20 @@ export function TtDescriptionForm() {
             />
           </div>
 
-          <div>
-            <Text className="!text-sm font-medium">Palabras clave</Text>
-            <Text className="!text-xs">
-              Entre 4 y 6 descriptores temáticos relevantes.
-            </Text>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {description.keywords.map((kw: string, i: number) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-900 dark:bg-primary-900 dark:text-primary-100"
-                >
-                  {kw}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      form.removeListItem(
-                        'sections.teacherThesis.description.keywords',
-                        i
-                      )
-                    }
-                    aria-label="Quitar"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                className="input rounded border px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-800"
-                placeholder="Nueva palabra clave"
-                value={keywordDraft}
-                onChange={(e) => setKeywordDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    const trimmed = keywordDraft.trim()
-                    if (trimmed && !description.keywords.includes(trimmed)) {
-                      form.insertListItem(
-                        'sections.teacherThesis.description.keywords',
-                        trimmed
-                      )
-                      setKeywordDraft('')
-                    }
-                  }
-                }}
-              />
-              <Button
-                plain
-                type="button"
-                onClick={() => {
-                  const trimmed = keywordDraft.trim()
-                  if (trimmed && !description.keywords.includes(trimmed)) {
-                    form.insertListItem(
-                      'sections.teacherThesis.description.keywords',
-                      trimmed
-                    )
-                    setKeywordDraft('')
-                  }
-                }}
-              >
-                <Plus data-slot="icon" />
-                Agregar
-              </Button>
-            </div>
-          </div>
+          <FormKeywordsInput
+            description="Entre 4 y 6 descriptores temáticos relevantes."
+            keywords={description.keywords}
+            error={
+              form.getInputProps('sections.teacherThesis.description.keywords')
+                .error
+            }
+            onChange={(next) =>
+              form.setFieldValue(
+                'sections.teacherThesis.description.keywords',
+                next
+              )
+            }
+          />
 
           <FieldInfo />
           <FormListbox

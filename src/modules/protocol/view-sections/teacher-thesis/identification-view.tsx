@@ -7,8 +7,8 @@ import {
 } from '@components/description-list'
 import { Text } from '@components/text'
 import {
-  POSTGRADUATE_PROGRAMS,
   SPONSORING_FACULTIES,
+  THESIS_TYPES,
 } from '@utils/protocol-types'
 
 interface Props {
@@ -37,9 +37,12 @@ const TtIdentificationView = ({ data, title }: Props) => {
       <ItemView title="Año" value={data.year ? String(data.year) : ''} />
       <ItemView
         title="Carrera de posgrado"
-        value={labelFor(POSTGRADUATE_PROGRAMS as any, data.postgraduateProgram)}
+        value={data.postgraduateProgram}
       />
-      <ItemView title="Tipo de tesis" value={data.thesisType} />
+      <ItemView
+        title="Tipo de tesis"
+        value={labelFor(THESIS_TYPES as any, data.thesisType)}
+      />
       <ItemView
         title="Ente patrocinante"
         value={labelFor(SPONSORING_FACULTIES as any, data.sponsoringFaculty)}

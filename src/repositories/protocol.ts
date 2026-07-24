@@ -350,6 +350,35 @@ const parseIdentificationTeam = (
   return teamWithAssignments
 }
 
+// Number inputs reach the server as strings, but the teacher-thesis Prisma
+// composites declare Int fields (year, weeklyHours, semester) — without this
+// coercion prisma.protocol.create/update rejects the whole document.
+const coerceTeacherThesisNumbers = (sections: Protocol['sections']) => {
+  const thesis = sections.teacherThesis
+  if (!thesis) return
+
+  const toInt = (value: unknown): number | null => {
+    const parsed = parseInt(value as string)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  if (thesis.identification) {
+    thesis.identification.year = toInt(thesis.identification.year)
+    const members = [
+      thesis.identification.thesisCandidate,
+      thesis.identification.director,
+      ...(thesis.identification.additionalMembers ?? []),
+    ]
+    members.forEach((member) => {
+      if (member) member.weeklyHours = toInt(member.weeklyHours) ?? 0
+    })
+  }
+
+  thesis.duration?.schedule?.forEach((entry) => {
+    entry.semester = toInt(entry.semester) ?? 1
+  })
+}
+
 const updateProtocolById = async (id: string, data: Protocol) => {
   try {
     // Get current protocol state to check if it's ongoing
@@ -361,12 +390,14 @@ const updateProtocolById = async (id: string, data: Protocol) => {
     const { currentFCA, currentFMR } = await getCurrentIndexes()
 
     // Parsing the section to have correct formats
-    data.sections.identification.team = IdentificationTeamSchema.array().parse(
-      parseIdentificationTeam(data.sections.identification.team)
-    )
+    if (data.sections.identification?.team) {
+      data.sections.identification.team = IdentificationTeamSchema.array().parse(
+        parseIdentificationTeam(data.sections.identification.team)
+      )
+    }
 
     // Indexing the amount
-    data.sections.budget.expenses.forEach((expenseType) => {
+    data.sections.budget?.expenses.forEach((expenseType) => {
       expenseType.data.forEach((expense) => {
         expense.amount = parseFloat(expense.amount as any)
         expense.amountIndex = {
@@ -375,6 +406,8 @@ const updateProtocolById = async (id: string, data: Protocol) => {
         }
       })
     })
+
+    coerceTeacherThesisNumbers(data.sections)
 
     // Only set convocatory if the protocol doesn't have one yet
     // This prevents overwriting the convocatory when editing existing protocols
@@ -387,7 +420,7 @@ const updateProtocolById = async (id: string, data: Protocol) => {
     }
 
 
-    (data.sections.bibliography.chart).forEach((ref) => {
+    data.sections.bibliography?.chart.forEach((ref) => {
       ref.year = parseInt(ref.year as any)
     })
 
@@ -665,12 +698,14 @@ const createProtocol = async (data: Protocol) => {
     const { currentFCA, currentFMR } = await getCurrentIndexes()
 
     // Parsing the section to have correct formats
-    data.sections.identification.team = IdentificationTeamSchema.array().parse(
-      parseIdentificationTeam(data.sections.identification.team)
-    )
+    if (data.sections.identification?.team) {
+      data.sections.identification.team = IdentificationTeamSchema.array().parse(
+        parseIdentificationTeam(data.sections.identification.team)
+      )
+    }
 
     // Indexing the amounts
-    data.sections.budget.expenses.forEach((expenseType) => {
+    data.sections.budget?.expenses.forEach((expenseType) => {
       expenseType.data.forEach((expense) => {
         expense.amount = parseFloat(expense.amount as any)
         expense.amountIndex = {
@@ -678,11 +713,13 @@ const createProtocol = async (data: Protocol) => {
           FMR: expense.amount / currentFMR,
         }
       })
-    });
+    })
 
-    (data.sections.bibliography.chart).forEach((ref) => {
+    data.sections.bibliography?.chart.forEach((ref) => {
       ref.year = parseInt(ref.year as any)
     })
+
+    coerceTeacherThesisNumbers(data.sections)
 
     const convocatory = await getCurrentConvocatory()
     data.convocatoryId = convocatory?.id ?? null

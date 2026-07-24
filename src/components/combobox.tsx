@@ -33,9 +33,17 @@ export function Combobox<T>({
 }: ComboboxProps<T>) {
   const [query, setQuery] = useState('')
 
+  // Options are rendered with key={option.value}; a repeated value would
+  // produce duplicate React keys and the option shows up N times while
+  // filtering, so drop duplicates before rendering.
+  const uniqueOptions = options.filter(
+    (option, index, all) =>
+      all.findIndex((o) => o.value === option.value) === index
+  )
+
   const filteredOptions =
-    query === '' ? options : (
-      options.filter((option) => {
+    query === '' ? uniqueOptions : (
+      uniqueOptions.filter((option) => {
         return option.label.toLowerCase().includes(query.toLowerCase())
       })
     )

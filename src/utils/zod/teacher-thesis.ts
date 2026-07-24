@@ -2,22 +2,27 @@ import { z } from 'zod'
 import {
   APPLICATION_FIELDS,
   DURATION_MONTHS,
-  POSTGRADUATE_PROGRAMS,
   PUBLICATION_TYPES,
   RESEARCH_TYPES,
   SOCIOECONOMIC_OBJECTIVES,
   SPONSORING_FACULTIES,
+  THESIS_TYPES,
 } from '../protocol-types'
 
 const enumFromDict = <K extends string>(dict: Record<K, unknown>) =>
-  z.enum(Object.keys(dict) as [K, ...K[]])
+  z.enum(Object.keys(dict) as [K, ...K[]], {
+    errorMap: () => ({ message: 'Debe seleccionar una opción' }),
+  })
 
 const required = (msg = 'El campo no puede estar vacío') =>
   z.string().min(1, { message: msg })
 
 export const TeacherThesisTeamMemberSchema = z.object({
-  name: required(),
+  name: required('Debe seleccionar un miembro o ingresar un nombre'),
   role: required(),
+  // Links the member to a system TeamMember record. Null for people that
+  // don't exist in the system yet (entered manually).
+  teamMemberId: z.string().nullable().optional().default(null),
   weeklyHours: z.coerce
     .number({ invalid_type_error: 'Debe ser numérico' })
     .int()
@@ -26,8 +31,10 @@ export const TeacherThesisTeamMemberSchema = z.object({
 
 export const TeacherThesisIdentificationSchema = z.object({
   year: z.coerce.number().int().positive().nullable().optional(),
-  postgraduateProgram: enumFromDict(POSTGRADUATE_PROGRAMS),
-  thesisType: required(),
+  // Free text: the name of the postgraduate program the thesis belongs to.
+  postgraduateProgram: required(),
+  // Maestría | Doctorado.
+  thesisType: enumFromDict(THESIS_TYPES),
   sponsoringFaculty: enumFromDict(SPONSORING_FACULTIES),
   thesisCandidate: TeacherThesisTeamMemberSchema,
   director: TeacherThesisTeamMemberSchema,
