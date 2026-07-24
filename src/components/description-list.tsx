@@ -39,7 +39,10 @@ export function DescriptionDetails({
       {...props}
       className={clsx(
         className,
-        'pb-3 pt-1 text-gray-950 dark:text-white sm:border-t sm:border-gray-950/5 sm:py-3 dark:sm:border-white/5 print:max-w-2xl print:!font-medium print:sm:py-0 sm:[&:nth-child(2)]:border-none'
+        // min-w-0 lets the auto grid track shrink below its content's
+        // min-content width — otherwise long unbreakable strings (URLs)
+        // push the column past the container and the text gets clipped.
+        'min-w-0 pb-3 pt-1 text-gray-950 dark:text-white sm:border-t sm:border-gray-950/5 sm:py-3 dark:sm:border-white/5 print:max-w-2xl print:!font-medium print:sm:py-0 sm:[&:nth-child(2)]:border-none'
       )}
     />
   )
