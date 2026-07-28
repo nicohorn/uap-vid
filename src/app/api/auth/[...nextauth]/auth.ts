@@ -7,6 +7,7 @@ import {
   updateUserByEmail,
   saveUser,
   findUserByEmail,
+  findUserById,
 } from '@repositories/user'
 import { verifyHashScrypt } from '@utils/hash'
 
@@ -89,17 +90,54 @@ export const authOptions: NextAuthOptions = {
       }
       return true
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, trigger, session }) => {
       if (user && user.email) {
         const normalizedEmail = user.email.toLowerCase().trim()
         const userFromDb = await findUserByEmail(normalizedEmail)
         if (userFromDb) token.user = userFromDb
       }
+
+      // Admin impersonation. The `session` payload comes from the client
+      // (useSession().update(...)), so it is untrusted: the only thing that
+      // authorizes the swap is the ADMIN role already present in the signed
+      // token. While impersonating, the admin's own user is kept in
+      // token.originalUser so the session can be restored.
+      if (trigger === 'update' && session) {
+        const realUser = (token.originalUser ?? token.user) as User | undefined
+
+        if (
+          typeof session.impersonateUserId === 'string' &&
+          realUser?.role === 'ADMIN'
+        ) {
+          const target = await findUserById(session.impersonateUserId)
+          if (target && target.id !== realUser.id) {
+            token.originalUser = realUser
+            token.user = target
+            console.log(
+              `[impersonation] ${realUser.email} (${realUser.id}) started impersonating ${target.email} (${target.id})`
+            )
+          }
+        }
+
+        if (session.stopImpersonation === true && token.originalUser) {
+          console.log(
+            `[impersonation] ${(token.originalUser as User).email} stopped impersonating ${(token.user as User).email}`
+          )
+          token.user = token.originalUser
+          delete token.originalUser
+        }
+      }
+
       return token
     },
     session: async ({ session, token }) => {
       if (token) {
         session.user = token.user as User
+        const original = token.originalUser as User | undefined
+        session.impersonatedBy =
+          original ?
+            { id: original.id, name: original.name, email: original.email }
+          : undefined
       }
       return session
     },
