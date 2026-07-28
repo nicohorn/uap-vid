@@ -6,7 +6,7 @@ import {
 } from '@repositories/protocol'
 import { getReviewsByProtocol } from '@repositories/review'
 import { getActionsByRoleAndState, canExecute } from '@utils/scopes'
-import { ProtocolSchema } from '@utils/zod'
+import { StandardProtocolSchema } from '@utils/zod/protocol'
 import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
@@ -76,11 +76,12 @@ export default async function ActionsPage({
 
   // --- Checks for Publish, Accept, and Approve actions ---
 
-  // Publish — TT protocols validate only their own sections; standard validates everything.
+  // Publish — TT protocols validate only their own sections; standard
+  // validates everything except the inert teacherThesis subdocument.
   const validToPublish =
     protocol.protocolType === 'TEACHER_THESIS'
       ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
-      : ProtocolSchema.safeParse(protocol)
+      : StandardProtocolSchema.safeParse(protocol)
   // Standard protocols also need every team member to have a justification
   // and a CV (inline or via their linked UAP user) before they can be
   // published. TT uses a different team shape, so this gate doesn't apply
