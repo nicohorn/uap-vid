@@ -7,11 +7,20 @@ declare module 'next-auth' {
    */
   interface Session {
     user: User & DefaultSession['user']
+    /**
+     * Present while an admin is impersonating another user: identifies the
+     * real admin behind the session. Absent on normal sessions.
+     */
+    impersonatedBy?: { id: string; name: string; email: string }
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     user: User & DefaultSession['user']
+    /**
+     * The admin's own user while impersonating; restored on exit.
+     */
+    originalUser?: User & DefaultSession['user']
   }
 }
