@@ -34,7 +34,7 @@ import {
   AlertTriangle,
 } from 'tabler-icons-react'
 import { FlagsDialogAtom } from './flags/flags-dialog'
-import { ProtocolSchema } from '@utils/zod'
+import { StandardProtocolSchema } from '@utils/zod/protocol'
 import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 import { useAtom } from 'jotai'
 import { reactivateProtocolAndAnualBudget } from '@actions/anual-budget/action'
@@ -268,7 +268,7 @@ export function ActionsDropdown({
         const parsed =
           protocol.protocolType === 'TEACHER_THESIS'
             ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
-            : ProtocolSchema.safeParse(protocol)
+            : StandardProtocolSchema.safeParse(protocol)
         if (parsed.error) {
           notifications.show({
             title: 'El protocolo no está completo',

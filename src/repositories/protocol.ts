@@ -379,6 +379,17 @@ const coerceTeacherThesisNumbers = (sections: Protocol['sections']) => {
   })
 }
 
+// The form seeds sections.teacherThesis with empty defaults for every
+// protocol type. Persisting that seed on STANDARD protocols blocked
+// publishing (its empty fields fail TeacherThesisSchema with errors no tab
+// surfaces), so it's dropped before writing. Since Prisma replaces the whole
+// sections composite, re-saving a protocol also cleans up the stale
+// subdocument on existing documents.
+const dropForeignTypeSections = (data: Protocol) => {
+  if (data.protocolType !== 'TEACHER_THESIS' && data.sections?.teacherThesis)
+    delete (data.sections as { teacherThesis?: unknown }).teacherThesis
+}
+
 const updateProtocolById = async (id: string, data: Protocol) => {
   try {
     // Get current protocol state to check if it's ongoing
@@ -408,6 +419,7 @@ const updateProtocolById = async (id: string, data: Protocol) => {
     })
 
     coerceTeacherThesisNumbers(data.sections)
+    dropForeignTypeSections(data)
 
     // Only set convocatory if the protocol doesn't have one yet
     // This prevents overwriting the convocatory when editing existing protocols
@@ -720,6 +732,7 @@ const createProtocol = async (data: Protocol) => {
     })
 
     coerceTeacherThesisNumbers(data.sections)
+    dropForeignTypeSections(data)
 
     const convocatory = await getCurrentConvocatory()
     data.convocatoryId = convocatory?.id ?? null

@@ -359,3 +359,20 @@ export const ProtocolSchema = z
       }
     }
   })
+
+/**
+ * Publish validation for STANDARD protocols. The new-protocol form seeds
+ * `sections.teacherThesis` with empty defaults for every protocol type, so
+ * standard protocols persisted an inert teacher-thesis subdocument whose
+ * empty fields fail TeacherThesisSchema — invisibly blocking the publish
+ * (no tab surfaces those errors). Dropping the subdocument before parsing
+ * validates only what a standard protocol actually collects.
+ */
+export const StandardProtocolSchema = z.preprocess((value) => {
+  if (value && typeof value === 'object' && 'sections' in value) {
+    const { sections, ...rest } = value as { sections: Record<string, unknown> }
+    const { teacherThesis: _teacherThesis, ...restSections } = sections ?? {}
+    return { ...rest, sections: restSections }
+  }
+  return value
+}, ProtocolSchema)

@@ -6,7 +6,7 @@ import {
 } from '@repositories/protocol'
 import { getReviewsByProtocol } from '@repositories/review'
 import { getActionsByRoleAndState, canExecute } from '@utils/scopes'
-import { ProtocolSchema } from '@utils/zod'
+import { StandardProtocolSchema } from '@utils/zod/protocol'
 import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
@@ -98,12 +98,13 @@ export default async function ActionsPage({
     publication: 'Publicación',
   }
 
-  // Publish — TT protocols validate only their own sections; standard validates everything.
+  // Publish — TT protocols validate only their own sections; standard
+  // validates everything except the inert teacherThesis subdocument.
   const isTeacherThesis = protocol.protocolType === 'TEACHER_THESIS'
   const validToPublish =
     isTeacherThesis
       ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
-      : ProtocolSchema.safeParse(protocol)
+      : StandardProtocolSchema.safeParse(protocol)
 
   // Derive the human-readable list of incomplete sections from the zod issues.
   // Standard issues are rooted at the protocol ("sections.<key>...."), TT
