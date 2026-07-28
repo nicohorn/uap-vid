@@ -76,11 +76,53 @@ export default async function ActionsPage({
 
   // --- Checks for Publish, Accept, and Approve actions ---
 
+  // Tab labels for each sections.* key, used to tell the user WHICH sections
+  // are blocking the publish instead of a generic "complete everything".
+  // Methodology fields live inside the Descripción tab, hence the shared label.
+  const STANDARD_SECTION_LABELS: Record<string, string> = {
+    identification: 'Identificación',
+    duration: 'Tipo y duración',
+    budget: 'Presupuesto',
+    description: 'Descripción',
+    methodology: 'Descripción',
+    introduction: 'Introducción',
+    publication: 'Producción',
+    bibliography: 'Bibliografía',
+  }
+  const TT_SECTION_LABELS: Record<string, string> = {
+    identification: 'Identificación',
+    duration: 'Duración y cronograma',
+    description: 'Descripción',
+    introduction: 'Introducción',
+    method: 'Método',
+    publication: 'Publicación',
+  }
+
   // Publish — TT protocols validate only their own sections; standard validates everything.
+  const isTeacherThesis = protocol.protocolType === 'TEACHER_THESIS'
   const validToPublish =
-    protocol.protocolType === 'TEACHER_THESIS'
+    isTeacherThesis
       ? TeacherThesisSchema.safeParse(protocol.sections.teacherThesis)
       : ProtocolSchema.safeParse(protocol)
+
+  // Derive the human-readable list of incomplete sections from the zod issues.
+  // Standard issues are rooted at the protocol ("sections.<key>...."), TT
+  // issues at sections.teacherThesis ("<key>....").
+  const incompleteSections =
+    validToPublish.success ? []
+    : Array.from(
+        new Set(
+          validToPublish.error.issues
+            .map((issue) =>
+              isTeacherThesis ?
+                TT_SECTION_LABELS[String(issue.path[0])]
+              : issue.path[0] === 'sections' ?
+                STANDARD_SECTION_LABELS[String(issue.path[1])]
+              : undefined
+            )
+            .filter((label): label is string => Boolean(label))
+        )
+      )
   // Standard protocols also need every team member to have a justification
   // and a CV (inline or via their linked UAP user) before they can be
   // published. TT uses a different team shape, so this gate doesn't apply
@@ -94,7 +136,13 @@ export default async function ActionsPage({
   checkResults.publish.hasConvocatory = !!protocol.convocatoryId
   if (!validToPublish.success) {
     checkResults.publish.message =
-      'El protocolo no está completo. Debe completar todas las secciones y los campos requeridos.'
+      incompleteSections.length > 0 ?
+        `El protocolo no está completo. ${
+          incompleteSections.length === 1 ?
+            `Falta completar la sección: ${incompleteSections[0]}.`
+          : `Faltan completar las secciones: ${incompleteSections.join(', ')}.`
+        }`
+      : 'El protocolo no está completo. Debe completar todas las secciones y los campos requeridos.'
   } else if (teamErrors.length > 0) {
     checkResults.publish.message =
       teamErrors.length === 1
