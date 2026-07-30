@@ -1106,6 +1106,17 @@ const getProtocolsByRole = cache(
  * Returns the first per-member error so the UI can surface a meaningful
  * publish-block message. An empty array means the team passes.
  */
+// Only the teaching/research team is evaluated, so the CV requirement for
+// publishing applies to these roles alone — technicians, professionals and
+// scholarship holders don't have to upload one. "A definir" placeholders
+// (toBeConfirmed) have no person yet, so they're exempt as well.
+const CV_REQUIRED_ROLES = [
+  'Director',
+  'Codirector',
+  'Investigador UAP',
+  'Investigador Externo UAP',
+]
+
 const validateTeamForPublish = async (
   protocol: Pick<Protocol, 'sections'>
 ): Promise<{ index: number; memberLabel: string; message: string }[]> => {
@@ -1148,12 +1159,14 @@ const validateTeamForPublish = async (
       })
     }
 
+    const cvRequired =
+      !member.toBeConfirmed && CV_REQUIRED_ROLES.includes(member.role)
     const inlineCv = Boolean(member.cvFileKey)
     const linkedCv =
       member.teamMemberId ?
         Boolean(linkedMap.get(member.teamMemberId)?.user?.cvFileKey)
       : false
-    if (!inlineCv && !linkedCv) {
+    if (cvRequired && !inlineCv && !linkedCv) {
       errors.push({
         index,
         memberLabel,
