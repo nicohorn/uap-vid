@@ -80,13 +80,17 @@ export type ChecklistGateResult = {
 }
 
 /**
- * Critical-items gate. Used by @actions/page.tsx to block
- * ASSIGN_TO_METHODOLOGIST when any "excluyente" item is not "YES".
+ * Critical-items gate. Used by @evaluators/page.tsx to block
+ * ASSIGN_TO_METHODOLOGIST while an "excluyente" item is unanswered or
+ * rejected.
  *
- * Reason codes:
- *  - 'UNANSWERED' — item is missing or PENDING
- *  - 'REJECTED'   — secretary marked it NO
- *  - 'NA_NOT_ALLOWED' — N/A is not acceptable for excluyentes
+ * "N/A" satisfies the gate: several excluyentes genuinely don't apply to
+ * every protocol (e.g. functional overlap when the researcher is not an
+ * employee), and forcing a "Sí" there would record an answer that isn't true.
+ *
+ * Blocking reasons:
+ *  - item is missing or PENDING — the secretary hasn't reviewed it
+ *  - item is NO — the secretary rejected it
  */
 export const validateChecklistForAssignment = async (
   protocolId: string
@@ -109,12 +113,6 @@ export const validateChecklistForAssignment = async (
         key,
         label: def.label,
         reason: 'Marcado como "No"',
-      })
-    } else if (item.state === 'NOT_APPLICABLE') {
-      missing.push({
-        key,
-        label: def.label,
-        reason: 'No puede marcarse como "No aplica" — es un ítem excluyente',
       })
     }
   }
