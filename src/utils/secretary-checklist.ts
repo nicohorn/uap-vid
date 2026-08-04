@@ -1,7 +1,7 @@
 // Central registry for the Secretaría de Investigación pre-evaluation
 // checklist. Drives the UI, Zod validation, the AI prompt, and the
-// "critical items gate" that blocks assigning evaluators when the 5
-// excluyentes are not satisfied.
+// "critical items gate" that blocks assigning evaluators while any of the 5
+// excluyentes is left unanswered or rejected.
 //
 // Source: "Lista borrador para plataforma - SI - RP1.pdf" (client).
 
@@ -25,8 +25,10 @@ export type ChecklistItemDef = {
   category: ChecklistCategory
   label: string
   /**
-   * Marks the 5 excluyentes from the PDF. If any critical item is not "YES",
-   * the protocol cannot advance to METHODOLOGICAL_EVALUATION.
+   * Marks the 5 excluyentes from the PDF. While any critical item is left
+   * PENDING or answered "NO", the protocol cannot advance to
+   * METHODOLOGICAL_EVALUATION. "N/A" resolves the item like "YES" does —
+   * these checks don't apply to every protocol.
    */
   critical?: boolean
   /** Hint shown to the secretary and included in the AI prompt context. */

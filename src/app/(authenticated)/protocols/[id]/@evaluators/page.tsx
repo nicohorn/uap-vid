@@ -50,9 +50,9 @@ export default async function ReviewAssignation({
     )?.verdict
 
     // Critical-item gate: secretary cannot send the protocol to
-    // methodological evaluation until the 5 excluyentes are all "Sí".
-    // Admins can still override — they see a warning but the selector is
-    // not removed for them.
+    // methodological evaluation while an excluyente is still pending or
+    // answered "No" ("N/A" resolves it). Admins can still override — they see
+    // a warning but the selector is not removed for them.
     const checklistGate = await validateChecklistForAssignment(protocol.id)
     const isAdmin = session.user.role === Role.ADMIN
     const checklistBlocksMethodological =
@@ -156,7 +156,8 @@ export default async function ReviewAssignation({
                 No se puede asignar evaluador metodológico
               </div>
               <div className="mb-2">
-                Faltan ítems críticos del checklist de secretaría:
+                Quedan ítems críticos del checklist de secretaría sin resolver
+                (respondé "Sí" o "N/A" para continuar):
               </div>
               <ul className="ml-4 list-disc space-y-1">
                 {checklistGate.missing.map((m) => (
@@ -177,9 +178,9 @@ export default async function ReviewAssignation({
                 <span className="font-semibold">Atención (admin override):</span>{' '}
                 el checklist de secretaría tiene {checklistGate.missing.length}{' '}
                 ítem{checklistGate.missing.length === 1 ? '' : 's'} crítico
-                {checklistGate.missing.length === 1 ? '' : 's'} sin "Sí". Podés
-                continuar pero la asignación quedará registrada con observación
-                pendiente.
+                {checklistGate.missing.length === 1 ? '' : 's'} sin resolver.
+                Podés continuar pero la asignación quedará registrada con
+                observación pendiente.
               </div>
             )}
           {reviewAssignSelectsData.map(

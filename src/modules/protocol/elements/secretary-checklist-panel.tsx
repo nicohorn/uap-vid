@@ -14,6 +14,7 @@ import {
   type ChecklistItemDef,
 } from '@utils/secretary-checklist'
 import type { SecretaryChecklistItem } from '@utils/zod/secretary-checklist'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Checklist,
@@ -61,6 +62,7 @@ export function SecretaryChecklistPanel({
   const panelRef = useRef<HTMLDivElement | null>(null)
   const dragOffsetRef = useRef<{ x: number; y: number } | null>(null)
   const commentTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const router = useRouter()
 
   const categories = itemsByCategory()
 
@@ -108,12 +110,14 @@ export function SecretaryChecklistPanel({
     async (item: SecretaryChecklistItem) => {
       try {
         await upsertSecretaryChecklistItems(protocolId, [item])
+        return true
       } catch (e) {
         notifications.show({
           title: 'Error al guardar',
           message: (e as Error).message,
           intent: 'error',
         })
+        return false
       }
     },
     [protocolId]
@@ -131,7 +135,23 @@ export function SecretaryChecklistPanel({
       next.set(def.key, updated)
       return next
     })
-    void persistItem(updated)
+    void persistItem(updated).then((saved) => {
+      if (!saved) {
+        // Roll back the optimistic value — otherwise the panel shows an answer
+        // the server never stored and the assignment gate keeps blocking with
+        // no visible reason.
+        setItems((prev) => {
+          const next = new Map(prev)
+          next.set(def.key, existing)
+          return next
+        })
+        return
+      }
+      // Only critical items move the assignment gate, and that gate lives in a
+      // server component (@evaluators). Without this refresh the evaluator
+      // selector stays blocked until a full page reload.
+      if (def.critical) router.refresh()
+    })
   }
 
   const setComment = (def: ChecklistItemDef, comment: string) => {
@@ -211,10 +231,12 @@ export function SecretaryChecklistPanel({
     const i = items.get(d.key)
     return i && i.state !== 'PENDING'
   }).length
+  // Mirrors validateChecklistForAssignment: only unanswered or rejected
+  // excluyentes block the handoff — "N/A" is a valid resolution.
   const criticalMissing = allItems.filter((d) => {
     if (!d.critical) return false
     const i = items.get(d.key)
-    return !i || i.state !== 'YES'
+    return !i || i.state === 'PENDING' || i.state === 'NO'
   }).length
 
   if (!open) {
@@ -328,6 +350,14 @@ export function SecretaryChecklistPanel({
                                   </Badge>
                                 )}
                                 <div>{def.label}</div>
+                                {def.critical &&
+                                  (currentState === 'PENDING' ||
+                                    currentState === 'NO') && (
+                                    <div className="mt-1 text-[10px] text-red-700 dark:text-red-300">
+                                      Ítem excluyente: bloquea la asignación de
+                                      evaluadores hasta responder "Sí" o "N/A".
+                                    </div>
+                                  )}
                               </div>
                             </div>
                             <div className="mt-2 flex flex-wrap gap-1">
