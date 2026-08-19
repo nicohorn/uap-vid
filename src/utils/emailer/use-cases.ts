@@ -5,6 +5,7 @@ export enum useCases {
   onPublish = 'onPublish',
   onApprove = 'onApprove',
   onOwnerEditingEnabled = 'onOwnerEditingEnabled',
+  onOwnerEditingFinished = 'onOwnerEditingFinished',
   changeUserEmail = 'changeUserEmail',
   passwordReset = 'passwordReset',
 }
@@ -16,6 +17,7 @@ export const useCasesDictionary: { [key: string]: string } = {
   onPublish: 'Publicación de protocolo',
   onApprove: 'Aprobación de protocolo',
   onOwnerEditingEnabled: 'Habilitación de edición',
+  onOwnerEditingFinished: 'Correcciones del director finalizadas',
   changeUserEmail: 'Cambio de email',
   passwordReset: 'Recuperación de contraseña',
 }

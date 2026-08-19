@@ -1,8 +1,8 @@
 # Instructivo — Secretaría de Investigación: habilitar la edición al director para que modifique el proyecto
 
-**Alcance:** proyectos estándar en estado **Publicado**, **Evaluación metodológica** o **Evaluación científica**. Cubre el caso "el proyecto ya fue publicado pero todavía no tiene metodólogo y hay que pedirle un cambio al director", y también los pedidos de cambio durante las evaluaciones.
+**Alcance:** proyectos en estado **Publicado**, **Evaluación metodológica** o **Evaluación científica** (las tesis de docente, solo mientras están en _Publicado_). Cubre el caso "el proyecto ya fue publicado pero todavía no tiene metodólogo y hay que pedirle un cambio al director", y también los pedidos de cambio durante las evaluaciones.
 
-**Idea general:** el proyecto **no cambia de estado**. La SI (o un Administrador) usa la acción **"Habilitar edición al director"**, indica el **motivo** (obligatorio), y a partir de ahí el director puede editar el proyecto hasta el próximo cambio de estado (por ejemplo, cuando se asigna el metodólogo). El motivo queda registrado en los logs del proyecto y se le envía por email al director.
+**Idea general:** el proyecto **no cambia de estado**. La SI (o un Administrador) usa la acción **"Habilitar edición al director"**, indica el **motivo** (obligatorio), y a partir de ahí el director puede editar el proyecto. Cuando termina, el director usa **"Finalizar correcciones"**: se cierra la edición y le llega un email automático a quien la habilitó. El motivo y el cierre quedan registrados en los logs del proyecto.
 
 ---
 
@@ -17,7 +17,8 @@ Director completa el proyecto → Acciones → Publicar
         │                                                              │
         └── Acciones → "Habilitar edición al director" ◄───────────────┘  (disponible en los tres estados)
                         (motivo obligatorio → log + email)
-                        El director edita; al próximo cambio de estado la edición se vuelve a bloquear.
+                        El director edita → Acciones → "Finalizar correcciones" (email automático a la SI).
+                        Si no finaliza, cualquier cambio de estado también vuelve a bloquear la edición.
 ```
 
 ---
@@ -43,10 +44,10 @@ Qué pasa al confirmar:
 
 Se puede repetir la acción si hace falta agregar otro motivo: cada vez queda un log nuevo y se envía otro email.
 
-### Paso 3 — Seguimiento
+### Paso 3 — El director corrige y finaliza
 
-- El director corrige y guarda las secciones. No hay una acción de "listo": conviene acordar por **chat del proyecto** o email que avise cuando termine (o revisar el proyecto directamente).
-- La SI puede volver a revisar el checklist y pasar los ítems observados a **Sí / N/A**.
+- El director corrige y guarda las secciones. Al terminar, usa **Acciones → "Finalizar correcciones"** (puede agregar un comentario opcional). Eso cierra la edición y **envía automáticamente un email** a quien la habilitó (con fallback a las secretarías de la unidad académica).
+- La SI recibe ese email, verifica los cambios y puede volver a revisar el checklist y pasar los ítems observados a **Sí / N/A**. Si falta algo, repite el Paso 2 con un nuevo motivo.
 
 ### Paso 4 — Continuar el circuito
 
@@ -58,7 +59,7 @@ Se puede repetir la acción si hace falta agregar otro motivo: cada vez queda un
 ## 3. Preguntas frecuentes
 
 - **¿Vuelve el proyecto a "Borrador"?** No. Se mantiene el estado; solo se habilita la edición al dueño.
-- **¿Puedo deshabilitar la edición antes de que cambie el estado?** No hay botón para eso hoy; se apaga sola en el próximo cambio de estado (por ejemplo, al asignar el metodólogo).
-- **¿Quién puede usar la acción?** Secretarios y Administradores. Investigadores, metodólogos y evaluadores no la ven.
+- **¿Cómo se cierra la edición?** La cierra el director con "Finalizar correcciones" (avisa por email a la SI), o se apaga sola en el próximo cambio de estado (por ejemplo, al asignar el metodólogo).
+- **¿Quién puede usar cada acción?** "Habilitar edición al director": secretarios y administradores. "Finalizar correcciones": solo el director/dueño del proyecto, y solo mientras la edición está habilitada.
 - **¿Aplica a tesis de docente (TT)?** No: las TT no tienen etapa de evaluación (van de Publicado a Aceptar) y no muestran esta acción.
 - **¿Dónde veo el motivo después?** Administradores: en los logs del proyecto. El director: en el email recibido.

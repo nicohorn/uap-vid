@@ -17,4 +17,5 @@ export const ActionDictionary = {
   [Action.REVIEW]: 'Realizar revision',
   [Action.REACTIVATE]: 'Reactivar',
   [Action.ENABLE_OWNER_EDITING]: 'Habilitar edición al director',
+  [Action.FINISH_OWNER_EDITING]: 'Finalizar correcciones',
 }

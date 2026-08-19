@@ -79,6 +79,17 @@ export default async function ActionsPage({
     filteredActions.push(Action.EDIT) // I only check for edit in Dropdown, but add it only if is owner.
   }
 
+  // FINISH_OWNER_EDITING is the owner's counterpart of ENABLE_OWNER_EDITING:
+  // only meaningful for the protocol owner while an unlock is active.
+  if (
+    filteredActions.includes(Action.FINISH_OWNER_EDITING) &&
+    (!isOwner || !protocol.ownerEditingEnabled)
+  ) {
+    filteredActions = filteredActions.filter(
+      (a) => a !== Action.FINISH_OWNER_EDITING
+    )
+  }
+
   // --- Checks for Publish, Accept, and Approve actions ---
 
   // Tab labels for each sections.* key, used to tell the user WHICH sections
