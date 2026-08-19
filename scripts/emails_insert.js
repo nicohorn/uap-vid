@@ -39,6 +39,12 @@ const emails = [
       'Se aprobó tu proyecto de investigación y el presupuesto del mismo.',
   },
   {
+    useCase: 'onOwnerEditingEnabled',
+    subject: 'Se habilitó la edición de tu proyecto',
+    content:
+      'La Secretaría de Investigación habilitó la edición de tu protocolo para que realices modificaciones. Motivo:',
+  },
+  {
     useCase: 'changeUserEmail',
     subject: 'Acá va tu código de confirmación toga',
     content: 'Este es el código de confirmación para cambiar tu email',

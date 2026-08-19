@@ -1,5 +1,5 @@
 import ProtocolForm from '@protocol/protocol-form-template'
-import { canExecute } from '@utils/scopes'
+import { canExecute, canOwnerEdit } from '@utils/scopes'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from 'app/api/auth/[...nextauth]/auth'
@@ -24,14 +24,14 @@ export default async function Page({
   const isAdmin = session.user.role === 'ADMIN'
   const canEdit =
     isAdmin ||
-    canExecute(
-      session.user.id === protocol.researcherId ?
-        Action.EDIT_BY_OWNER
-      : Action.EDIT,
-      session.user.role,
-      protocol.state,
-      protocol.protocolType
-    )
+    (session.user.id === protocol.researcherId ?
+      canOwnerEdit(session.user.role, protocol)
+    : canExecute(
+        Action.EDIT,
+        session.user.role,
+        protocol.state,
+        protocol.protocolType
+      ))
 
   if (canEdit) {
     return <ProtocolForm protocol={protocol as any} />

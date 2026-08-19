@@ -16,4 +16,5 @@ export const ActionDictionary = {
   [Action.ASSIGN_TO_METHODOLOGIST]: 'Asignar a metodologo',
   [Action.REVIEW]: 'Realizar revision',
   [Action.REACTIVATE]: 'Reactivar',
+  [Action.ENABLE_OWNER_EDITING]: 'Habilitar edición al director',
 }

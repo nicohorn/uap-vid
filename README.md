@@ -5,6 +5,27 @@ To do:
 - [] Descripción de la arquitectura el proyecto
   - [] Explicación de la estructura de archivos y carpetas
   - [] Diagrama de despliegue
+
+## Documentation
+
+- [`docs/local-development.md`](docs/local-development.md) — local MongoDB
+  (replica set), **syncing production data locally** (`scripts/sync-prod-db.sh`),
+  logging in with prod users, running the app and the unit tests, tooling
+  caveats, and open security observations about production.
+- [`docs/owner-editing.md`](docs/owner-editing.md) — design and implementation
+  of `ENABLE_OWNER_EDITING` (secretary unlocks editing for the protocol owner
+  during evaluation stages).
+- [`docs/instructivos/`](docs/instructivos/) — end-user guides in Spanish
+  (currently: *Habilitar edición al director*).
+- [`src/modules/protocol/elements/ADMIN_OVERRIDE_README.md`](src/modules/protocol/elements/ADMIN_OVERRIDE_README.md)
+  — admin override of publish/accept/approve checks.
+
+## Tests
+
+```bash
+pnpm test        # vitest, see docs/local-development.md
+```
+
 ## Docker setup
 
 ### Build the docker image

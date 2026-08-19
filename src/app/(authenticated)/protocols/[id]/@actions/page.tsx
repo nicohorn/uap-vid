@@ -5,7 +5,11 @@ import {
   validateTeamForPublish,
 } from '@repositories/protocol'
 import { getReviewsByProtocol } from '@repositories/review'
-import { getActionsByRoleAndState, canExecute } from '@utils/scopes'
+import {
+  getActionsByRoleAndState,
+  canExecute,
+  canOwnerEdit,
+} from '@utils/scopes'
 import { StandardProtocolSchema } from '@utils/zod/protocol'
 import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 
@@ -65,13 +69,14 @@ export default async function ActionsPage({
     },
   }
 
-  // Edit by owner
+  // Edit by owner (state scope, or unlocked via ENABLE_OWNER_EDITING)
+  const isOwner = session.user.id === protocol.researcherId
   if (
     !actions.includes(Action.EDIT) &&
-    actions.includes(Action.EDIT_BY_OWNER)
+    isOwner &&
+    canOwnerEdit(session.user.role, protocol)
   ) {
-    if (session.user.id === protocol.researcherId)
-      filteredActions.push(Action.EDIT) // I only check for edit in Dropdown, but add it only if is owner.
+    filteredActions.push(Action.EDIT) // I only check for edit in Dropdown, but add it only if is owner.
   }
 
   // --- Checks for Publish, Accept, and Approve actions ---
@@ -185,14 +190,15 @@ export default async function ActionsPage({
   const approveChecksFailed = hasInvalidFlags || !hasRequiredFlags
 
   // Edit
-  const canEditNormally = canExecute(
-    session.user.id === protocol.researcherId ?
-      Action.EDIT_BY_OWNER
-    : Action.EDIT,
-    session.user.role,
-    protocol.state,
-    protocol.protocolType
-  )
+  const canEditNormally =
+    isOwner ?
+      canOwnerEdit(session.user.role, protocol)
+    : canExecute(
+        Action.EDIT,
+        session.user.role,
+        protocol.state,
+        protocol.protocolType
+      )
   checkResults.edit.canEdit = canEditNormally
   if (!canEditNormally) {
     checkResults.edit.message = `El protocolo está en estado "${ProtocolStatesDictionary[protocol.state]}" y no puede ser editado normalmente. Solo los administradores pueden editar protocolos en este estado.`

@@ -49,6 +49,7 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
     Action.VIEW_ANUAL_BUDGET,
     Action.ASSIGN_TO_METHODOLOGIST,
     Action.ASSIGN_TO_SCIENTIFIC,
+    Action.ENABLE_OWNER_EDITING,
   ],
   [Role.METHODOLOGIST]: [
     Action.REVIEW,
@@ -72,6 +73,7 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
     Action.VIEW_ANUAL_BUDGET,
     Action.GENERATE_ANUAL_BUDGET,
     Action.REACTIVATE,
+    Action.ENABLE_OWNER_EDITING,
   ],
 }
 
@@ -111,6 +113,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.ASSIGN_TO_METHODOLOGIST,
     Action.EDIT,
     Action.DISCONTINUE,
+    Action.ENABLE_OWNER_EDITING,
   ],
   [ProtocolState.METHODOLOGICAL_EVALUATION]: [
     Action.ASSIGN_TO_METHODOLOGIST, // It's a Re-assignation
@@ -118,6 +121,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.REVIEW,
     Action.ASSIGN_TO_SCIENTIFIC,
     Action.DISCONTINUE,
+    Action.ENABLE_OWNER_EDITING,
   ],
   [ProtocolState.SCIENTIFIC_EVALUATION]: [
     Action.ASSIGN_TO_SCIENTIFIC, // Allows re-assignation
@@ -125,6 +129,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.REVIEW,
     Action.ACCEPT,
     Action.DISCONTINUE,
+    Action.ENABLE_OWNER_EDITING,
   ],
   [ProtocolState.ACCEPTED]: [
     Action.APPROVE,
@@ -168,6 +173,27 @@ export const canExecute = (
 ) =>
   Role_SCOPE[role].includes(action) &&
   getStateScope(state, protocolType).includes(action)
+
+/**
+ * Owner edit gate. The state scope decides by default (DRAFT and evaluation
+ * stages), but a secretary/admin can additionally unlock editing on a
+ * PUBLISHED protocol via ENABLE_OWNER_EDITING, which sets
+ * `Protocol.ownerEditingEnabled` (cleared on the next state transition).
+ * Callers are still responsible for checking that the user IS the owner.
+ */
+export const canOwnerEdit = (
+  role: Role,
+  protocol: {
+    state: ProtocolState
+    protocolType?: string | null
+    ownerEditingEnabled: boolean
+  }
+) =>
+  Role_SCOPE[role].includes(Action.EDIT_BY_OWNER) &&
+  (protocol.ownerEditingEnabled ||
+    getStateScope(protocol.state, protocol.protocolType).includes(
+      Action.EDIT_BY_OWNER
+    ))
 
 export const getActionsByRoleAndState = (
   role: Role,

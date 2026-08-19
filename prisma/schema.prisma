@@ -91,6 +91,9 @@ model Protocol {
   state           ProtocolState    @default(DRAFT)
   protocolType    String           @default("STANDARD")
   protocolSubtype String?
+  // Set by ENABLE_OWNER_EDITING so the owner can edit while the protocol is
+  // PUBLISHED / under evaluation; cleared on every state transition.
+  ownerEditingEnabled Boolean      @default(false)
   reviews         Review[]
   sections        ProtocolSections
   convocatory     Convocatory?     @relation(fields: [convocatoryId], references: [id])
@@ -639,6 +642,7 @@ enum Action {
   REVIEW
   ACCEPT //This action is made by the secretary. Accept the protocol to be evalualuated by the VID committee
   APPROVE //This approval is made by the admin and approve the protocol and mark it as ON_GOING
+  ENABLE_OWNER_EDITING //Secretary/admin lets the owner edit the protocol during evaluation stages; the reason is logged
   DISCONTINUE
   FINISH
   DELETE

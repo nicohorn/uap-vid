@@ -9,7 +9,16 @@ export type Emailer = {
   email: string
   protocolId?: string
   randomString?: string
+  /** Free text appended below the template content (e.g. a reason). */
+  message?: string
 }
+
+const escapeHtml = (text: string) =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 
 export async function getEmailSubjects() {
   const emails = await getEmails()
@@ -46,6 +55,7 @@ export async function emailer({
   email,
   protocolId,
   randomString,
+  message,
 }: Emailer) {
   console.log('🔥 EMAILER CALLED:', {
     useCase,
@@ -249,6 +259,7 @@ export async function emailer({
           <td style="overflow-wrap:break-word;word-break:break-word;padding:10px;font-family:arial,helvetica,sans-serif;" align="left">
 
       <div style="font-size: 14px; line-height: 140%; text-align: left; word-wrap: break-word;">
+        ${message ? `<p style="line-height: 140%; white-space: pre-wrap;">${escapeHtml(message)}</p>` : ''}
         <p style="line-height: 140%;">Entrá a ver el protocolo haciendo <a rel="noopener" href=${href} target="_blank">click acá.</a></p>
       </div>
 

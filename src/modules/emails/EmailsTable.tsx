@@ -573,6 +573,32 @@ export default function EmailsTable({
         </div>
       </div>
     ),
+    onOwnerEditingEnabled: (
+      <div className="relative mx-auto my-5 flex w-fit flex-col items-center gap-3 text-justify text-gray-700 dark:text-gray-200 md:flex-row">
+        <div className="flex flex-1 flex-col items-center">
+          <User className="h-10 w-10" />{' '}
+          <h3 className="text-sm font-bold">Secretario o Administrador</h3>{' '}
+          <p className="text-xs">
+            Habilita la edición de un protocolo publicado o en evaluación para
+            que el director realice modificaciones, indicando el motivo.
+          </p>
+        </div>
+        <div className="hidden place-self-center self-center md:block">
+          <ArrowRight />
+        </div>
+        <div className="block place-self-center self-center md:hidden">
+          <ArrowDown />
+        </div>
+        <div className="flex flex-1 flex-col items-center">
+          <User className="h-10 w-10" />{' '}
+          <h3 className="text-sm font-bold">Investigador</h3>{' '}
+          <p className="text-xs ">
+            El investigador recibe una notificación por email con el motivo,
+            informándole que puede editar su protocolo.
+          </p>
+        </div>
+      </div>
+    ),
     changeUserEmail: (
       <div className="relative mx-auto my-5 flex w-fit flex-col items-center gap-3 text-justify text-gray-700 dark:text-gray-200 md:flex-row">
         <div className="flex flex-1 flex-col items-center">
