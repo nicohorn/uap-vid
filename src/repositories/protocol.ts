@@ -203,6 +203,7 @@ const findProtocolByIdWithResearcher = cache(
           state: true,
           protocolType: true,
           protocolSubtype: true,
+          ownerEditingEnabled: true,
           researcherId: true,
           convocatoryId: true,
           anualBudgetIds: true,
@@ -491,6 +492,8 @@ const updateProtocolStateById = async (
       },
       data: {
         state: toState,
+        // An owner-editing unlock is scoped to the stage it was granted in.
+        ownerEditingEnabled: false,
       },
       select: {
         id: true,

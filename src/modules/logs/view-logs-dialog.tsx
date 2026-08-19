@@ -65,10 +65,16 @@ export function LogCard({ log }: { log: Log }) {
       </Text>
 
       {log.action ?
-        <Text>
-          <Strong>{log.user.name}</Strong>{' '}
-          {logActionToText(log.action, log.reviewer?.name)}
-        </Text>
+        <>
+          <Text>
+            <Strong>{log.user.name}</Strong>{' '}
+            {logActionToText(log.action, log.reviewer?.name)}
+          </Text>
+          {/* Actions that carry a reason (e.g. ENABLE_OWNER_EDITING) */}
+          {log.message ?
+            <Text className="ml-1 !text-xs italic">Motivo: {log.message}</Text>
+          : null}
+        </>
       : <Text>{log.message}</Text>}
     </>
   )
@@ -96,4 +102,6 @@ const logActionToText = (action: Action, interpolated?: string) => {
     return 'ha marcado el proyecto como discontinuado'
   if (action === Action.DELETE) return 'ha borrado el proyecto'
   if (action === Action.REACTIVATE) return 'ha reactivado el proyecto'
+  if (action === Action.ENABLE_OWNER_EDITING)
+    return 'ha habilitado la edición del proyecto al director'
 }
