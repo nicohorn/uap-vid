@@ -48,7 +48,7 @@ describe('ENABLE_OWNER_EDITING scope', () => {
     }
   )
 
-  it('is not available for teacher thesis protocols (no evaluation stage)', () => {
+  it('teacher thesis: available only while PUBLISHED (secretary reviews before accepting)', () => {
     expect(
       canExecute(
         Action.ENABLE_OWNER_EDITING,
@@ -56,7 +56,17 @@ describe('ENABLE_OWNER_EDITING scope', () => {
         ProtocolState.PUBLISHED,
         'TEACHER_THESIS'
       )
-    ).toBe(false)
+    ).toBe(true)
+    for (const state of [ProtocolState.DRAFT, ProtocolState.ACCEPTED]) {
+      expect(
+        canExecute(
+          Action.ENABLE_OWNER_EDITING,
+          Role.SECRETARY,
+          state,
+          'TEACHER_THESIS'
+        )
+      ).toBe(false)
+    }
   })
 
   it('shows up in the actions offered to a secretary on a published protocol', () => {
@@ -66,6 +76,46 @@ describe('ENABLE_OWNER_EDITING scope', () => {
     expect(
       getActionsByRoleAndState(Role.RESEARCHER, ProtocolState.PUBLISHED)
     ).not.toContain(Action.ENABLE_OWNER_EDITING)
+  })
+})
+
+describe('FINISH_OWNER_EDITING scope', () => {
+  it.each(EVALUATION_STATES)(
+    'owner-capable roles can finish corrections in %s',
+    (state) => {
+      expect(
+        canExecute(Action.FINISH_OWNER_EDITING, Role.RESEARCHER, state)
+      ).toBe(true)
+      expect(
+        canExecute(Action.FINISH_OWNER_EDITING, Role.METHODOLOGIST, state)
+      ).toBe(true)
+    }
+  )
+
+  it('is not available to scientists nor outside evaluation states', () => {
+    expect(
+      canExecute(
+        Action.FINISH_OWNER_EDITING,
+        Role.SCIENTIST,
+        ProtocolState.PUBLISHED
+      )
+    ).toBe(false)
+    for (const state of NON_EVALUATION_STATES) {
+      expect(
+        canExecute(Action.FINISH_OWNER_EDITING, Role.RESEARCHER, state)
+      ).toBe(false)
+    }
+  })
+
+  it('teacher thesis: available while PUBLISHED', () => {
+    expect(
+      canExecute(
+        Action.FINISH_OWNER_EDITING,
+        Role.RESEARCHER,
+        ProtocolState.PUBLISHED,
+        'TEACHER_THESIS'
+      )
+    ).toBe(true)
   })
 })
 

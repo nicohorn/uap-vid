@@ -149,16 +149,22 @@ describe('enableOwnerEditing', () => {
     expect(prisma.protocol.update).not.toHaveBeenCalled()
   })
 
-  it('is forbidden for teacher thesis protocols', async () => {
+  it('is allowed for teacher thesis protocols while PUBLISHED, not after acceptance', async () => {
     vi.mocked(getServerSession).mockResolvedValue(session(Role.SECRETARY))
     vi.mocked(prisma.protocol.findUnique).mockResolvedValue(
       protocolIn(ProtocolState.PUBLISHED, 'TEACHER_THESIS') as never
     )
 
-    const result = await enableOwnerEditing(PROTOCOL_ID, 'motivo')
+    const published = await enableOwnerEditing(PROTOCOL_ID, 'motivo')
+    expect(published.status).toBe(true)
+    expect(prisma.protocol.update).toHaveBeenCalledTimes(1)
 
-    expect(result.status).toBe(false)
-    expect(prisma.protocol.update).not.toHaveBeenCalled()
+    vi.mocked(prisma.protocol.findUnique).mockResolvedValue(
+      protocolIn(ProtocolState.ACCEPTED, 'TEACHER_THESIS') as never
+    )
+    const accepted = await enableOwnerEditing(PROTOCOL_ID, 'motivo')
+    expect(accepted.status).toBe(false)
+    expect(prisma.protocol.update).toHaveBeenCalledTimes(1)
   })
 
   it('fails gracefully when the protocol does not exist', async () => {

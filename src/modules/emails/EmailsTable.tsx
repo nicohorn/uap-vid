@@ -599,6 +599,32 @@ export default function EmailsTable({
         </div>
       </div>
     ),
+    onOwnerEditingFinished: (
+      <div className="relative mx-auto my-5 flex w-fit flex-col items-center gap-3 text-justify text-gray-700 dark:text-gray-200 md:flex-row">
+        <div className="flex flex-1 flex-col items-center">
+          <User className="h-10 w-10" />{' '}
+          <h3 className="text-sm font-bold">Investigador</h3>{' '}
+          <p className="text-xs">
+            El director del proyecto marca como finalizadas las modificaciones
+            que le fueron solicitadas al habilitarle la edición.
+          </p>
+        </div>
+        <div className="hidden place-self-center self-center md:block">
+          <ArrowRight />
+        </div>
+        <div className="block place-self-center self-center md:hidden">
+          <ArrowDown />
+        </div>
+        <div className="flex flex-1 flex-col items-center">
+          <User className="h-10 w-10" />{' '}
+          <h3 className="text-sm font-bold">Secretario</h3>{' '}
+          <p className="text-xs ">
+            El secretario que habilitó la edición recibe una notificación por
+            email informándole que las correcciones fueron realizadas.
+          </p>
+        </div>
+      </div>
+    ),
     changeUserEmail: (
       <div className="relative mx-auto my-5 flex w-fit flex-col items-center gap-3 text-justify text-gray-700 dark:text-gray-200 md:flex-row">
         <div className="flex flex-1 flex-col items-center">

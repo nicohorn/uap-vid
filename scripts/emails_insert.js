@@ -45,6 +45,12 @@ const emails = [
       'La Secretaría de Investigación habilitó la edición de tu protocolo para que realices modificaciones. Motivo:',
   },
   {
+    useCase: 'onOwnerEditingFinished',
+    subject: 'El director finalizó las correcciones del proyecto',
+    content:
+      'El director del proyecto marcó como finalizadas las modificaciones que le fueron solicitadas.',
+  },
+  {
     useCase: 'changeUserEmail',
     subject: 'Acá va tu código de confirmación toga',
     content: 'Este es el código de confirmación para cambiar tu email',

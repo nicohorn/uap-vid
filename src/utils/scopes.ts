@@ -39,6 +39,7 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
     Action.EDIT_BY_OWNER,
     Action.PUBLISH,
     Action.VIEW_ANUAL_BUDGET,
+    Action.FINISH_OWNER_EDITING,
   ],
   [Role.SECRETARY]: [
     Action.ACCEPT,
@@ -50,12 +51,14 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
     Action.ASSIGN_TO_METHODOLOGIST,
     Action.ASSIGN_TO_SCIENTIFIC,
     Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
   [Role.METHODOLOGIST]: [
     Action.REVIEW,
     Action.CREATE,
     Action.EDIT_BY_OWNER,
     Action.PUBLISH,
+    Action.FINISH_OWNER_EDITING,
   ],
   [Role.SCIENTIST]: [Action.REVIEW],
   [Role.ADMIN]: [
@@ -74,6 +77,7 @@ const Role_SCOPE: { [key in keyof typeof Role]: Action[] } = {
     Action.GENERATE_ANUAL_BUDGET,
     Action.REACTIVATE,
     Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
 }
 
@@ -88,6 +92,10 @@ const TT_STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.ACCEPT,
     Action.EDIT,
     Action.DISCONTINUE,
+    // The secretary reviews the thesis before accepting it, so the
+    // owner-editing unlock applies here too.
+    Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
   [ProtocolState.ACCEPTED]: [Action.EDIT, Action.DISCONTINUE],
   [ProtocolState.METHODOLOGICAL_EVALUATION]: [],
@@ -114,6 +122,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.EDIT,
     Action.DISCONTINUE,
     Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
   [ProtocolState.METHODOLOGICAL_EVALUATION]: [
     Action.ASSIGN_TO_METHODOLOGIST, // It's a Re-assignation
@@ -122,6 +131,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.ASSIGN_TO_SCIENTIFIC,
     Action.DISCONTINUE,
     Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
   [ProtocolState.SCIENTIFIC_EVALUATION]: [
     Action.ASSIGN_TO_SCIENTIFIC, // Allows re-assignation
@@ -130,6 +140,7 @@ const STATE_SCOPE: { [key in keyof typeof ProtocolState]: Action[] } = {
     Action.ACCEPT,
     Action.DISCONTINUE,
     Action.ENABLE_OWNER_EDITING,
+    Action.FINISH_OWNER_EDITING,
   ],
   [ProtocolState.ACCEPTED]: [
     Action.APPROVE,

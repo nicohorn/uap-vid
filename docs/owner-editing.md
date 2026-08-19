@@ -3,7 +3,9 @@
 Lets the Secretaría de Investigación (or an admin) hand a protocol back to its
 owner for corrections **without changing the protocol state**, in every stage
 where an evaluation is happening. Every unlock records _why_ and emails the
-researcher. User-facing guide: [`instructivos/habilitar-edicion-al-director.md`](instructivos/habilitar-edicion-al-director.md).
+researcher; the owner closes the loop with **FINISH_OWNER_EDITING**, which
+turns the flag off again and emails the secretary/admin who requested the
+changes. User-facing guide: [`instructivos/habilitar-edicion-al-director.md`](instructivos/habilitar-edicion-al-director.md).
 
 ## Why a flag and not a state transition
 
@@ -27,8 +29,8 @@ state machine intact.
 - `Protocol.ownerEditingEnabled: Boolean @default(false)` (`prisma/schema.prisma`).
 - `Action.ENABLE_OWNER_EDITING`, allowed for `SECRETARY` and `ADMIN` in
   `PUBLISHED`, `METHODOLOGICAL_EVALUATION`, `SCIENTIFIC_EVALUATION`
-  (`Role_SCOPE` / `STATE_SCOPE`). Not offered for `TEACHER_THESIS` protocols
-  (no evaluation stage in `TT_STATE_SCOPE`).
+  (`Role_SCOPE` / `STATE_SCOPE`). `TEACHER_THESIS` protocols get it while
+  `PUBLISHED` (the secretary reviews the thesis before accepting it).
 - Owner edit gate: `canOwnerEdit(role, protocol)` = role may `EDIT_BY_OWNER`
   **and** (`ownerEditingEnabled` **or** state scope allows it). Used by
   `protocols/[id]/[section]/page.tsx` (route guard) and
@@ -47,34 +49,49 @@ state machine intact.
   action and `router.refresh()`.
 - Audit: `LogCard` (`src/modules/logs/view-logs-dialog.tsx`) now renders
   `Motivo: …` under any action log that carries a message. Logs are admin-only.
-- Email: use case `onOwnerEditingEnabled` ("Habilitación de edición").
+- `Action.FINISH_OWNER_EDITING` — the owner's counterpart. Server action
+  `finishOwnerEditing(protocolId, comment?)`
+  (`src/app/actions/protocol/finish-owner-editing.ts`): owner-only
+  (ownership check, `canExecute`, and the flag currently on), optional
+  comment, clears the flag, logs it, and emails the user who made the latest
+  ENABLE_OWNER_EDITING log — falling back to the academic units' secretaries
+  if that can't be resolved. The dropdown option ("Finalizar correcciones")
+  is only rendered for the owner while the unlock is active (filtered in
+  `@actions/page.tsx`).
+- Email: use cases `onOwnerEditingEnabled` ("Habilitación de edición") and
+  `onOwnerEditingFinished` ("Correcciones del director finalizadas").
   `emailer()` accepts an optional `message` rendered (HTML-escaped) above the
   protocol link — templates in `EmailContentTemplate` are otherwise static.
-  The template row must exist per environment:
+  The template rows must exist per environment:
   `pnpm exec tsx src/migrations/seed-email-owner-editing-template.ts`
-  (idempotent; also in `scripts/emails_insert.js`). Without it the email goes
-  out with the generic "Notificación del sistema" subject.
+  (idempotent, seeds both; also in `scripts/emails_insert.js`). Without them
+  the emails go out with the generic "Notificación del sistema" subject.
 
 ## Tests
 
-- `src/utils/scopes.test.ts` — role × state matrix, TT exclusion, `canOwnerEdit`.
+- `src/utils/scopes.test.ts` — role × state matrix (both actions), TT
+  PUBLISHED inclusion, `canOwnerEdit`.
 - `src/app/actions/protocol/enable-owner-editing.test.ts` — happy path, admin
   in evaluation states, empty reason, no session, forbidden roles/states, TT,
   missing protocol, DB error.
+- `src/app/actions/protocol/finish-owner-editing.test.ts` — happy path
+  (recipient = unlock author), secretaries fallback, optional comment, not
+  the owner, flag off, wrong state, TT, no session.
 - `src/repositories/protocol.test.ts` — state transition clears the flag.
 
-Smoke-tested against a production snapshot (see `local-development.md`):
-secretary sees the action → validation on empty reason → success notification,
-flag set, log with reason, emailer called with the right template → researcher
-sees "Editar" on a PUBLISHED protocol and reaches the form → with the flag off
-the route redirects to `/protocols`.
+Smoke-tested end to end against a production snapshot (see
+`local-development.md`), twice: (1) secretary enables → empty-reason
+validation → flag set, log with reason, email to the researcher → researcher
+sees "Editar" on a PUBLISHED protocol and reaches the form → flag off redirects
+to `/protocols`; (2) **admin** enables (action present in the admin dropdown)
+→ owner sees "Editar" + "Finalizar correcciones" → finishes with a comment →
+flag off, FINISH log, email `onOwnerEditingFinished` to the admin who enabled
+→ both options disappear from the owner's dropdown.
 
 ## Known gaps / follow-ups
 
-- No manual "disable" — the unlock ends at the next state transition. A
-  `DISABLE_OWNER_EDITING` action would follow the exact same pattern.
 - No visual indicator on the protocol header that editing is currently
   unlocked (only the "Editar" option for the owner and the admin log).
-- No in-app "I'm done" signal from the researcher; the SI checks the protocol
-  or agrees via chat/email.
 - Chat was deliberately not used for the reason (decision: log + email only).
+- The secretary cannot manually revoke an unlock; it ends when the owner
+  finishes or the protocol changes state.

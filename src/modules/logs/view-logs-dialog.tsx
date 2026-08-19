@@ -104,4 +104,6 @@ const logActionToText = (action: Action, interpolated?: string) => {
   if (action === Action.REACTIVATE) return 'ha reactivado el proyecto'
   if (action === Action.ENABLE_OWNER_EDITING)
     return 'ha habilitado la edición del proyecto al director'
+  if (action === Action.FINISH_OWNER_EDITING)
+    return 'ha finalizado las correcciones del proyecto'
 }

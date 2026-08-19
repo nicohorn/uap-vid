@@ -33,9 +33,11 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   LockOpen,
+  Checks,
 } from 'tabler-icons-react'
 import { FlagsDialogAtom } from './flags/flags-dialog'
 import { EnableOwnerEditingDialog } from './enable-owner-editing-dialog'
+import { FinishOwnerEditingDialog } from './finish-owner-editing-dialog'
 import { StandardProtocolSchema } from '@utils/zod/protocol'
 import { TeacherThesisSchema } from '@utils/zod/teacher-thesis'
 import { useAtom } from 'jotai'
@@ -120,6 +122,7 @@ export function ActionsDropdown({
     callback: null,
   })
   const [enableOwnerEditingOpen, setEnableOwnerEditingOpen] = useState(false)
+  const [finishOwnerEditingOpen, setFinishOwnerEditingOpen] = useState(false)
 
   const isAdmin = userRole === 'ADMIN'
 
@@ -458,6 +461,14 @@ export function ActionsDropdown({
       },
       icon: <LockOpen data-slot="icon" />,
     },
+    {
+      action: Action.FINISH_OWNER_EDITING,
+      callback: () => {
+        setFinishOwnerEditingOpen(true)
+        return true // Dialog opened; it refreshes on success itself
+      },
+      icon: <Checks data-slot="icon" />,
+    },
   ]
 
   const endingActions: ActionOption[] = [
@@ -627,6 +638,12 @@ export function ActionsDropdown({
         protocolId={protocol.id}
         open={enableOwnerEditingOpen}
         onClose={() => setEnableOwnerEditingOpen(false)}
+      />
+
+      <FinishOwnerEditingDialog
+        protocolId={protocol.id}
+        open={finishOwnerEditingOpen}
+        onClose={() => setFinishOwnerEditingOpen(false)}
       />
 
       {/* Admin Override Warning Dialog */}
