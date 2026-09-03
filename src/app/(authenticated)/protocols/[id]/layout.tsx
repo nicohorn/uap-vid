@@ -22,6 +22,7 @@ import { ReviewDisclose } from '@review/review-disclose'
 import OpenFlagsDialog from '@protocol/elements/flags/open-flags-dialog-button'
 import { ConfirmTeamMembersForm } from '@protocol/form-sections/confirm-team-members-form'
 import { SecretaryChecklistPanel } from '@protocol/elements/secretary-checklist-panel'
+import { ChecklistObservations } from '@protocol/elements/checklist-observations'
 
 export default async function Layout({
   params,
@@ -140,6 +141,14 @@ export default async function Layout({
                 isReviewFormShown || isReviewListShown ? 'left-1/3' : ''
               )}
             >
+              {/*
+                Secretary observations are shown to the protocol owner so the
+                researcher knows what to correct when the checklist fails.
+              */}
+              {protocol.protocolType !== 'TEACHER_THESIS' &&
+                session.user.id === protocol.researcher.id && (
+                  <ChecklistObservations protocolId={protocol.id} />
+                )}
               {children}
             </ContainerAnimations>
           </div>

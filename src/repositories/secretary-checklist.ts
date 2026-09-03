@@ -2,8 +2,11 @@
 
 import { prisma } from '@utils/bd'
 import {
+  CHECKLIST_CATEGORIES,
+  CHECKLIST_ITEMS,
   CRITICAL_CHECKLIST_KEYS,
   getChecklistItemDef,
+  type ChecklistState,
 } from '@utils/secretary-checklist'
 import {
   type SecretaryChecklist,
@@ -72,6 +75,63 @@ export const upsertSecretaryChecklistItems = async (
     data: { secretaryChecklist: next },
   })
   return next
+}
+
+export type ChecklistObservation = {
+  key: string
+  label: string
+  category: string
+  state: ChecklistState
+  comment: string | null
+  critical: boolean
+}
+
+/**
+ * Checklist items the secretary flagged, exposed to the protocol owner so the
+ * researcher knows what to correct when the protocol comes back. An item is an
+ * observation when the secretary answered "NO" or left a comment — the rest of
+ * the checklist (states, pending work) stays internal to Secretaría.
+ */
+export const getChecklistObservationsForOwner = async (
+  protocolId: string
+): Promise<ChecklistObservation[]> => {
+  const session = await getServerSession(authOptions)
+  if (!session) throw new Error('Unauthorized')
+
+  const protocol = await prisma.protocol.findUnique({
+    where: { id: protocolId },
+    select: { researcherId: true, secretaryChecklist: true },
+  })
+  if (!protocol) return []
+
+  const isOwner = session.user.id === protocol.researcherId
+  const isStaff =
+    session.user.role === 'SECRETARY' || session.user.role === 'ADMIN'
+  if (!isOwner && !isStaff)
+    throw new Error('Forbidden: solo el director del proyecto o secretaría')
+
+  const parsed = SecretaryChecklistSchema.safeParse(protocol.secretaryChecklist)
+  if (!parsed.success) return []
+
+  const byKey = new Map(parsed.data.items.map((i) => [i.key, i]))
+  const observations: ChecklistObservation[] = []
+  // Iterate the registry (not the stored items) so observations come out in
+  // the same order the checklist shows them to the secretary.
+  for (const def of CHECKLIST_ITEMS) {
+    const item = byKey.get(def.key)
+    if (!item) continue
+    const comment = item.comment?.trim() ? item.comment.trim() : null
+    if (item.state !== 'NO' && !comment) continue
+    observations.push({
+      key: def.key,
+      label: def.label,
+      category: CHECKLIST_CATEGORIES[def.category],
+      state: item.state,
+      comment,
+      critical: Boolean(def.critical),
+    })
+  }
+  return observations
 }
 
 export type ChecklistGateResult = {

@@ -375,7 +375,7 @@ export function SecretaryChecklistPanel({
                               ))}
                             </div>
                             <textarea
-                              placeholder="Comentario (opcional)"
+                              placeholder="Comentario (visible para el investigador)"
                               value={item?.comment ?? ''}
                               onChange={(e) => setComment(def, e.target.value)}
                               rows={1}
