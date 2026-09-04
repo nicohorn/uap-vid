@@ -3,6 +3,11 @@ services:
   web-socket:
     image: uapsocket
     restart: 'always'
+    # The VPS docker daemon runs with userns-remap, so in-container root maps
+    # to a subordinate uid that cannot read the TLS certs in /home/nodo/certs
+    # (600/770, owned by nodo). Opt this service out so it can read them
+    # without making the private key world-readable.
+    userns_mode: 'host'
 
     ports:
       - '8000:3001'
