@@ -2,7 +2,7 @@
 
 import { Button } from '@components/button'
 import { notifications } from '@elements/notifications'
-import { CV_MAX_BYTES, CV_MIME } from '@utils/zod/cv'
+import { CV_MAX_BYTES, CV_MIME, cvHref } from '@utils/zod/cv'
 import { useRef, useState } from 'react'
 import { Check, FileText, Upload } from 'tabler-icons-react'
 
@@ -49,10 +49,11 @@ export function TeamMemberCvCell({
   const hasInline = Boolean(inlineCvFileKey)
   const hasUserCv = Boolean(linkedUser?.cvFileKey)
   const cvPresent = hasInline || hasUserCv
-  const downloadHref =
-    hasInline ? `/api/files/cv/inline/${inlineCvFileKey?.replace(/^cv\/inline\//, '')}`
-    : hasUserCv ? `/api/files/cv/${linkedUser!.userId}`
-    : null
+  const downloadHref = cvHref({
+    inlineCvFileKey,
+    userId: linkedUser?.userId,
+    userHasCv: hasUserCv,
+  })
   const displayName =
     hasInline ? inlineCvFileName || 'cv.pdf'
     : hasUserCv ? linkedUser!.cvFileName || 'cv.pdf'
@@ -111,7 +112,9 @@ export function TeamMemberCvCell({
         const data = await res.json().catch(() => null)
         notifications.show({
           title: `Error al subir (${res.status})`,
-          message: data?.error || `El servidor rechazó el archivo (HTTP ${res.status}).`,
+          message:
+            data?.error ||
+            `El servidor rechazó el archivo (HTTP ${res.status}).`,
           intent: 'error',
         })
         return

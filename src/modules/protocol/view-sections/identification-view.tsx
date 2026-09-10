@@ -10,9 +10,9 @@ import {
   DescriptionTerm,
 } from '@components/description-list'
 import { Text } from '@components/text'
-import { Link } from '@components/link'
 import Info from '@shared/info'
-import { FileText } from 'tabler-icons-react'
+import { cvHref } from '@utils/zod/cv'
+import { TeamMemberCvLink } from '../elements/view/team-member-cv-link'
 
 interface IdentificationProps {
   data: ProtocolSectionsIdentification
@@ -56,16 +56,7 @@ const TeamTable = ({
               >
                 <Text className="flex items-center gap-2 text-left">
                   {person.toBeConfirmed ? 'A definir' : person.fullName}
-                  {person.cvUserId && person.hasCv && (
-                    <Link
-                      href={`/api/files/cv/${person.cvUserId}`}
-                      target="_blank"
-                      className="inline-flex items-center gap-1 text-xs text-primary-700 hover:underline dark:text-primary-300"
-                    >
-                      <FileText className="size-3.5" />
-                      CV
-                    </Link>
-                  )}
+                  {person.cvHref && <TeamMemberCvLink href={person.cvHref} />}
                 </Text>
                 <Text className="text-left ">
                   {person.toBeConfirmed ?
@@ -138,8 +129,11 @@ export default async function IdentificationView({
       hours: assignment?.hours ?? tm.hours ?? 0,
       active: !toDate,
       toDate: toDate ? toDate.toISOString() : null,
-      cvUserId: teamMember?.user?.id ?? null,
-      hasCv: Boolean(teamMember?.user?.cvFileKey),
+      cvHref: cvHref({
+        inlineCvFileKey: tm.cvFileKey,
+        userId: teamMember?.user?.id,
+        userHasCv: Boolean(teamMember?.user?.cvFileKey),
+      }),
     }
   })
 
