@@ -16,7 +16,7 @@ import { NewEmailForm } from 'modules/profile/new-email-form'
 import { NewPasswordForm } from 'modules/profile/new-password-form'
 import { CvUploadForm } from 'modules/profile/cv-upload-form'
 import Clipboard from '@elements/clipboard'
-import { ReviewerCertificate } from 'modules/profile/reviewer-certificate'
+import { FileCertificate } from 'tabler-icons-react'
 import { Role } from '@prisma/client'
 
 export default async function Page() {
@@ -35,9 +35,18 @@ export default async function Page() {
       <Subheading className="mb-4 print:hidden">
         Datos del usuario que se encuentra autenticado en el sistema.
       </Subheading>
-      {(user.role == Role.SCIENTIST || user.role == Role.METHODOLOGIST) && (
-        <ReviewerCertificate user={session.user} reviews={reviews} />
-      )}
+      {(user.role == Role.SCIENTIST || user.role == Role.METHODOLOGIST) &&
+        reviews.length > 0 && (
+          <Button
+            href="/reviewer-certificate"
+            target="_blank"
+            outline
+            className="mx-auto"
+          >
+            <FileCertificate data-slot="icon" /> Descargar certificado de
+            evaluación
+          </Button>
+        )}
       {user.image ?
         <Image
           className="size-12 rounded-full print:hidden"

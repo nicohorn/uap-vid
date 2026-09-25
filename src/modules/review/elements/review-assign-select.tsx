@@ -22,6 +22,8 @@ interface ReviewAssignSelectProps {
   review: Review | null
   protocolId: string
   protocolState: ProtocolState
+  /** Show the assigned evaluator without allowing (re)assignment. */
+  readOnly?: boolean
 }
 
 export const AssignEvaluatorSelector = ({
@@ -30,6 +32,7 @@ export const AssignEvaluatorSelector = ({
   review,
   protocolId,
   protocolState,
+  readOnly = false,
 }: ReviewAssignSelectProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -103,6 +106,7 @@ export const AssignEvaluatorSelector = ({
             : 'resolutiva'
           }`}
           placeholder="Evaluador ..."
+          disabled={readOnly}
           options={users.map((u) => ({
             value: u.id,
             label: u.name,
@@ -110,7 +114,9 @@ export const AssignEvaluatorSelector = ({
           }))}
           {...form.getInputProps('evaluator')}
         />
-        <SubmitButton isLoading={isPending}>Asignar</SubmitButton>
+        {!readOnly && (
+          <SubmitButton isLoading={isPending}>Asignar</SubmitButton>
+        )}
       </Fieldset>
     </form>
   )
