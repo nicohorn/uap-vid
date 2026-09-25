@@ -183,19 +183,17 @@ export default async function ReviewAssignation({
                 observación pendiente.
               </div>
             )}
-          {reviewAssignSelectsData.map(
-            (data) =>
-              data.enabled && (
-                <AssignEvaluatorSelector
-                  key={data.type}
-                  type={data.type}
-                  users={data.users}
-                  review={data.review}
-                  protocolId={protocol.id}
-                  protocolState={protocol.state}
-                />
-              )
-          )}
+          {reviewAssignSelectsData.map((data) => (
+            <AssignEvaluatorSelector
+              key={data.type}
+              type={data.type}
+              users={data.enabled ? data.users : [data.review!.reviewer]}
+              review={data.review}
+              protocolId={protocol.id}
+              protocolState={protocol.state}
+              readOnly={!data.enabled}
+            />
+          ))}
         </div>
       </EvaluatorsDialog>
     )
