@@ -86,14 +86,24 @@ export const IdentificationTeamSchema = z.object({
 
 export const ConfirmTeamSchema = z.object({
   team: z.array(
-    z.object({
-      teamMemberId: z
-        .string()
-        .nullable()
-        .refine((val) => val !== null && val.length > 0, {
-          message: 'Debe seleccionar un miembro de equipo',
-        }),
-    })
+    z
+      .object({
+        teamMemberId: z.string().nullable(),
+        name: z.string().nullable().optional(),
+        toBeConfirmed: z.boolean().nullable().optional(),
+      })
+      // A member is confirmed either by picking an existing one from the list
+      // or by typing the name of a new one (created on save).
+      .refine(
+        (tm) =>
+          !tm.toBeConfirmed &&
+          ((!!tm.teamMemberId && tm.teamMemberId.length > 0) ||
+            (!!tm.name && tm.name.trim().length > 0)),
+        {
+          message: 'Debe seleccionar o ingresar un miembro de equipo',
+          path: ['teamMemberId'],
+        }
+      )
   ),
 })
 

@@ -7,15 +7,20 @@ import { notifications } from '@elements/notifications'
 import { useForm, zodResolver } from '@mantine/form'
 import type { Prisma, ProtocolSectionsIdentificationTeam } from '@prisma/client'
 import { updateProtocolTeamMembers } from '@repositories/protocol'
-import { getAllTeamMembers } from '@repositories/team-member'
+import {
+  findOrCreateTeamMemberByName,
+  getAllTeamMembers,
+} from '@repositories/team-member'
 import { getCategoriesForForm } from '@repositories/team-member-category'
 import { SubmitButton } from '@shared/submit-button'
 import { FormCombobox } from '@shared/form/form-combobox'
+import { FormInput } from '@shared/form/form-input'
+import { Button } from '@components/button'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ConfirmTeamSchema } from '@utils/zod'
 import { useRouter } from 'next/navigation'
-import React from 'react'
-import { Loader } from 'tabler-icons-react'
+import React, { useState } from 'react'
+import { Edit, Loader } from 'tabler-icons-react'
 
 type ProtocolMetadataAndTeamMembers = Prisma.ProtocolGetPayload<{
   select: {
@@ -40,6 +45,10 @@ export function ConfirmTeamMembersForm({
   protocol: ProtocolMetadataAndTeamMembers
 }) {
   const router = useRouter()
+  // Rows where the member is typed by hand (not in the list yet).
+  const [manualInputMode, setManualInputMode] = useState<{
+    [key: number]: boolean
+  }>({})
 
   const form = useForm({
     initialValues: { team: protocol.sections.identification.team },
@@ -58,10 +67,56 @@ export function ConfirmTeamMembersForm({
     queryFn: async () => await getCategoriesForForm(),
   })
 
+  const toggleManualInput = (
+    idx: number,
+    tm: ProtocolSectionsIdentificationTeam
+  ) => {
+    const manual = !manualInputMode[idx]
+    setManualInputMode((prev) => ({ ...prev, [idx]: manual }))
+    // Reset the row so it has to be picked/typed again.
+    form.setFieldValue(`team.${idx}.teamMemberId`, null)
+    form.setFieldValue(
+      `team.${idx}.toBeConfirmed`,
+      !(manual && form.getValues().team[idx]?.name?.trim())
+    )
+    if (manual)
+      form.setFieldValue(
+        `team.${idx}.role`,
+        categories?.find((c) => c.id == tm.categoryToBeConfirmed)?.name
+      )
+  }
+
   const { mutate } = useMutation({
     mutationKey: [protocol.id],
     mutationFn: async (values: ProtocolSectionsIdentificationTeam[]) => {
-      const result = await updateProtocolTeamMembers(protocol.id, values)
+      // Members typed manually don't exist yet: find or create them by name.
+      const team = await Promise.all(
+        values.map(async (tm) => {
+          // The view shows the role of the assignments, which still say
+          // 'A definir' until the member is confirmed.
+          const confirmed = {
+            ...tm,
+            assignments: tm.assignments.map((a) =>
+              a.role === 'A definir' && tm.role !== 'A definir' ?
+                { ...a, role: tm.role }
+              : a
+            ),
+          }
+          if (confirmed.teamMemberId || !confirmed.name?.trim())
+            return confirmed
+          const member = await findOrCreateTeamMemberByName(confirmed.name)
+          return member ? { ...confirmed, teamMemberId: member.id } : confirmed
+        })
+      )
+      if (team.some((tm) => !tm.teamMemberId)) {
+        notifications.show({
+          title: 'Error',
+          message: 'No se pudo registrar el miembro de equipo ingresado',
+          intent: 'error',
+        })
+        return
+      }
+      const result = await updateProtocolTeamMembers(protocol.id, team)
       if (result) {
         const isOngoing = protocol.state === 'ON_GOING'
         notifications.show({
@@ -120,28 +175,77 @@ export function ConfirmTeamMembersForm({
                         ?.name
                     }
                   </Subheading>
-                  <FormCombobox
-                    error={form.getInputProps(`team.${idx}.teamMemberId`).error}
-                    className="col-span-4 my-1"
-                    label=""
-                    options={
-                      teamMembers?.map((e) => ({
-                        value: e.id,
-                        label: e.name,
-                      })) ?? []
+                  <div className="col-span-4 my-1 flex items-start gap-1">
+                    {manualInputMode[idx] ?
+                      <FormInput
+                        className="flex-1"
+                        label=""
+                        type="text"
+                        placeholder="Nombre del miembro de equipo"
+                        error={
+                          form.getInputProps(`team.${idx}.teamMemberId`).error
+                        }
+                        value={form.getValues().team[idx]?.name ?? ''}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          form.setFieldValue(`team.${idx}.name`, e.target.value)
+                          form.setFieldValue(`team.${idx}.teamMemberId`, null)
+                          form.setFieldValue(
+                            `team.${idx}.role`,
+                            categories?.find(
+                              (c) => c.id == tm.categoryToBeConfirmed
+                            )?.name
+                          )
+                          form.setFieldValue(
+                            `team.${idx}.toBeConfirmed`,
+                            e.target.value.trim().length == 0
+                          )
+                        }}
+                      />
+                    : <FormCombobox
+                        error={
+                          form.getInputProps(`team.${idx}.teamMemberId`).error
+                        }
+                        className="flex-1"
+                        label=""
+                        options={
+                          teamMembers?.map((e) => ({
+                            value: e.id,
+                            label: e.name,
+                          })) ?? []
+                        }
+                        disabled={isLoading}
+                        onChange={(e: any) => {
+                          form.setFieldValue(`team.${idx}.teamMemberId`, e)
+                          form.setFieldValue(
+                            `team.${idx}.role`,
+                            categories?.find(
+                              (c) => c.id == tm.categoryToBeConfirmed
+                            )?.name
+                          )
+                          form.setFieldValue(`team.${idx}.toBeConfirmed`, false)
+                        }}
+                      />
                     }
-                    disabled={isLoading}
-                    onChange={(e: any) => {
-                      form.setFieldValue(`team.${idx}.teamMemberId`, e)
-                      form.setFieldValue(
-                        `team.${idx}.role`,
-                        categories?.find(
-                          (c) => c.id == tm.categoryToBeConfirmed
-                        )?.name
-                      )
-                      form.setFieldValue(`team.${idx}.toBeConfirmed`, false)
-                    }}
-                  />
+                    {manualInputMode[idx] ?
+                      <Button
+                        type="button"
+                        className="bg-blue-600 px-2 py-1 text-xs text-white transition-colors hover:bg-blue-700"
+                        title="Seleccionar de lista"
+                        onClick={() => toggleManualInput(idx, tm)}
+                      >
+                        <Edit size={16} />
+                      </Button>
+                    : <Button
+                        type="button"
+                        plain
+                        className="px-2 py-1 text-xs transition-colors hover:bg-gray-100"
+                        title="Ingresar manualmente"
+                        onClick={() => toggleManualInput(idx, tm)}
+                      >
+                        <Edit size={16} />
+                      </Button>
+                    }
+                  </div>
                 </div>
               )
             })}

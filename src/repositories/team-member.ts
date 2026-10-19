@@ -9,6 +9,23 @@ export const createTeamMember = async (data: Omit<TeamMember, 'id'>) =>
     data,
   })
 
+/**
+ * Returns the team member with exactly this name (case-insensitive), creating
+ * it (without linked user / academic unit) when it doesn't exist yet. Used when
+ * a member is typed manually instead of picked from the list.
+ */
+export const findOrCreateTeamMemberByName = async (rawName: string) => {
+  const name = rawName.trim()
+  if (!name) return null
+  const existing = await prisma.teamMember.findFirst({
+    where: { name: { equals: name, mode: 'insensitive' } },
+  })
+  if (existing) return existing
+  return await prisma.teamMember.create({
+    data: { name, userId: null, academicUnitId: null },
+  })
+}
+
 export const updateTeamMember = async (
   id: string,
   data: Omit<TeamMember, 'id'>
